@@ -212,65 +212,97 @@ class CompanionProvider {
     return htmlDocument({style:url('style.css'),script:url('app.js'),goku:art.goku.base,vegeta:art.vegeta.base,art:JSON.stringify(art),nonce,csp});
   }
 }
+// Flat late-afternoon wasteland, drawn to sit behind the fighters.
+const SCENE_SVG = `<svg class="scene" viewBox="0 0 300 200" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d8fd3"/><stop offset=".72" stop-color="#f2c891"/></linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c98d58"/><stop offset="1" stop-color="#9a6440"/></linearGradient>
+  </defs>
+  <rect width="300" height="200" fill="url(#sky)"/>
+  <circle cx="238" cy="112" r="22" fill="#fff1c9" opacity=".7"/>
+  <g fill="#fff" opacity=".5"><path d="M112 30a6 6 0 0 1 10-4 8 8 0 0 1 14 2 5 5 0 0 1 4 9h-26a4 4 0 0 1-2-7Z"/><path d="M206 58a4 4 0 0 1 7-3 6 6 0 0 1 10 1.5 3.5 3.5 0 0 1 3 6.5h-18a3 3 0 0 1-2-5Z"/></g>
+  <path d="M0 140V122h14l3-18h30l4 18h26l5-10h20l3 10h54l4-24h36l5 24h40l3-14h26l3 14h24v18Z" fill="#b28fa6" opacity=".55"/>
+  <path d="M-4 150v-20h20l4-30 8-4h20l6 4 3 30h18l2-8h12l3 8h90l3-22 9-4h18l7 5 2 21h26l3-6h10l2 6h40v20Z" fill="#a8603d"/>
+  <path d="M16 130l4-30 8-4h20l6 4 3 30M199 130l3-22 9-4h18l7 5 2 21" fill="none" stroke="#c97b4f" stroke-width="2"/>
+  <rect y="146" width="300" height="54" fill="url(#ground)"/>
+  <path d="M0 162h300M0 178h300" stroke="#b07548" stroke-width="1.5" opacity=".5"/>
+  <g fill="#8b5636" opacity=".6"><ellipse cx="40" cy="186" rx="9" ry="2.5"/><ellipse cx="262" cy="170" rx="7" ry="2"/><ellipse cx="160" cy="192" rx="5" ry="1.6"/></g>
+</svg>`;
+const ICONS = {
+  feed: '<path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M9 7.5c0-1.5 1-2 1-3.5M14 7.5c0-1.5 1-2 1-3.5"/>',
+  play: '<rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><path d="M16 11.5h.01M18 14h.01"/>',
+  rest: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/>',
+  train: '<path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z"/>'
+};
+const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 function htmlDocument(a) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" />
     <title>DBZ Companions</title></head>
 <body data-art='${a.art}'>
   <div class="shell">
-    <header class="header"><span class="brand-icon" aria-hidden="true">✦</span><div class="brand-copy"><strong>DBZ Companions</strong><span>Your tiny coding partners</span></div><span class="version">v0.3</span></header>
     <nav class="nav" aria-label="Companion sections">
-      <button type="button" class="nav-item is-active" data-tab="characters" aria-selected="true">Characters</button>
+      <button type="button" class="nav-item is-active" data-tab="characters" aria-selected="true">Fighters</button>
       <button type="button" class="nav-item" data-tab="stats" aria-selected="false">Stats</button>
       <button type="button" class="nav-item" data-tab="settings" aria-selected="false">Settings</button>
     </nav>
     <main>
-      <section id="characters" class="page active" aria-label="Characters">
-        <div class="stage-wrap">
-          <div class="stage" id="stage">
-            <div class="stage-grid"></div><div class="halo halo-a"></div><div class="halo halo-b"></div><div class="power-flash" aria-hidden="true"></div>
-            <div class="fighting-ring"></div><div class="stage-stars" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i></div>
-            <div class="fighter fighter-goku" id="goku"><div class="fighter-pose"><img draggable="false" alt="Chibi Goku" src="${a.goku}"/></div><span class="fighter-shadow"></span></div>
-            <div class="fighter fighter-vegeta" id="vegeta"><div class="fighter-pose"><img draggable="false" alt="Chibi Vegeta" src="${a.vegeta}"/></div><span class="fighter-shadow"></span></div>
-            <span class="reaction-bubble" id="bubble" aria-hidden="true">⚡</span>
-            <span class="stage-label" id="sceneLabel">Ready to train!</span>
-          </div>
+      <section id="characters" class="page active" aria-label="Fighters">
+        <div class="stage" id="stage">
+          ${SCENE_SVG}
+          <div class="scouter" aria-label="Power level">PWR<b id="powerNum">416</b></div>
+          <div class="fighter fighter-goku" id="goku"><div class="fighter-pose"><img draggable="false" alt="Goku" src="${a.goku}"/></div><span class="fighter-shadow"></span></div>
+          <div class="fighter fighter-vegeta" id="vegeta"><div class="fighter-pose"><img draggable="false" alt="Vegeta" src="${a.vegeta}"/></div><span class="fighter-shadow"></span></div>
+          <div class="power-flash" aria-hidden="true"></div>
+          <span class="speech" id="sceneLabel" aria-live="polite"></span>
         </div>
-        <div class="fighter-picker" aria-label="Select characters">
-          <button type="button" class="picker" data-fighter="goku"><img data-art="goku" src="${a.goku}" alt=""/><span>Goku</span></button>
-          <button type="button" class="picker" data-fighter="both"><span class="duo-thumbs"><img data-art="goku" src="${a.goku}" alt=""/><img data-art="vegeta" src="${a.vegeta}" alt=""/></span><span>Both</span></button>
-          <button type="button" class="picker" data-fighter="vegeta"><img data-art="vegeta" src="${a.vegeta}" alt=""/><span>Vegeta</span></button>
+        <div class="segmented" role="group" aria-label="Choose fighters">
+          <button type="button" class="picker" data-fighter="goku">Goku</button>
+          <button type="button" class="picker" data-fighter="both">Both</button>
+          <button type="button" class="picker" data-fighter="vegeta">Vegeta</button>
         </div>
-        <section class="stat-group compact" aria-label="Character wellbeing">
-          <div class="stat-row"><span class="stat-name">❤️ <span>Mood</span></span><div class="track"><div id="moodFill" class="fill blue"></div></div><span class="stat-num" id="moodNum">85%</span></div>
-          <div class="stat-row"><span class="stat-name">⚡ <span>Energy</span></span><div class="track"><div id="energyFill" class="fill amber"></div></div><span class="stat-num" id="energyNum">70%</span></div>
-          <div class="stat-row"><span class="stat-name">🍜 <span>Hunger</span></span><div class="track"><div id="hungerFill" class="fill orange"></div></div><span class="stat-num" id="hungerNum">40%</span></div>
+        <section class="stat-group" aria-label="Wellbeing">
+          <div class="stat-row"><span class="stat-name">Mood</span><div class="track"><div id="moodFill" class="fill mood"></div></div><span class="stat-num" id="moodNum">85%</span></div>
+          <div class="stat-row"><span class="stat-name">Energy</span><div class="track"><div id="energyFill" class="fill energy"></div></div><span class="stat-num" id="energyNum">70%</span></div>
+          <div class="stat-row"><span class="stat-name">Hunger</span><div class="track"><div id="hungerFill" class="fill hunger"></div></div><span class="stat-num" id="hungerNum">40%</span></div>
         </section>
-        <div class="actions"><button type="button" data-action="feed" class="action blue-action"><span>🍚</span> Feed</button><button type="button" data-action="play" class="action teal-action"><span>🎮</span> Play</button><button type="button" data-action="rest" class="action purple-action"><span>☾</span> Rest</button></div>
-        <button type="button" id="trainButton" class="train-button"><span>⚔</span><span>Training session</span><span class="keyhint">GO</span></button>
-        <div class="event-note"><span class="event-led"></span><span id="eventNote" aria-live="polite">Watching your coding session</span></div>
+        <div class="actions">
+          <button type="button" data-action="feed" class="action">${icon('feed')}Feed</button>
+          <button type="button" data-action="play" class="action">${icon('play')}Play</button>
+          <button type="button" data-action="rest" class="action">${icon('rest')}Rest</button>
+          <button type="button" data-action="train" class="action primary">${icon('train')}Train</button>
+        </div>
+        <div class="event-note" id="eventNote">Watching your coding session</div>
       </section>
       <section id="stats" class="page" aria-label="Stats" hidden>
-        <div class="section-kicker">FIGHTER STATUS</div>
-        <div class="level-card"><span>Current level</span><strong id="level">01</strong><span id="xpText">0 XP earned</span><div class="progress"><div id="xpFill"></div></div><small>Earn XP by typing code, saving files and training.</small></div>
-        <div class="info-line"><span>🥋 Character mode</span><strong id="modeText">Goku + Vegeta</strong></div>
-        <div class="info-line"><span>🔥 Form</span><strong id="formText">Base form</strong></div>
-        <div class="info-line"><span>⏭ Next form</span><strong id="nextFormText">Super Saiyan at Lv 5</strong></div>
-        <div class="info-line"><span>💙 Mood</span><strong id="moodDetail">85%</strong></div>
-        <div class="info-line"><span>⚡ Energy</span><strong id="energyDetail">70%</strong></div>
-        <div class="info-line"><span>🍜 Hunger</span><strong id="hungerDetail">40%</strong></div>
-        <div class="info-note">This is a visual fan prototype. Stats are playful, not linked to code quality.</div>
+        <div class="level-head">
+          <strong class="level-num" id="level">01</strong>
+          <div class="level-meta"><span class="kicker">Level</span><span class="form-chip" id="formText">Base form</span></div>
+        </div>
+        <div class="progress"><div id="xpFill"></div></div>
+        <div class="xp-line"><span id="xpText">0 XP</span><span id="nextFormText">Super Saiyan at Lv 5</span></div>
+        <ol class="timeline" id="timeline">
+          <li data-form="base"><span class="dot"></span>Base<small>Lv 1</small></li>
+          <li data-form="ssj"><span class="dot"></span>SSJ<small>Lv 5</small></li>
+          <li data-form="ssj2"><span class="dot"></span>SSJ2<small>Lv 10</small></li>
+          <li data-form="god"><span class="dot"></span>God<small>Lv 20</small></li>
+          <li data-form="blue"><span class="dot"></span>Blue<small>Lv 30</small></li>
+        </ol>
+        <div class="info-line"><span>Power level</span><strong id="powerDetail">416</strong></div>
+        <div class="info-line"><span>Fighters</span><strong id="modeText">Goku + Vegeta</strong></div>
+        <div class="info-line"><span>Mood</span><strong id="moodDetail">85%</strong></div>
+        <div class="info-line"><span>Energy</span><strong id="energyDetail">70%</strong></div>
+        <div class="info-line"><span>Hunger</span><strong id="hungerDetail">40%</strong></div>
+        <p class="hint">Earn XP by typing code, saving files and training.</p>
       </section>
       <section id="settings" class="page" aria-label="Settings" hidden>
-        <div class="section-kicker">APPEARANCE & BEHAVIOR</div>
-        <label class="toggle-row"><span><strong>Training animations</strong><small>Friendly sparring while you code</small></span><input id="training" type="checkbox" checked/><span class="switch"></span></label>
-        <label class="toggle-row"><span><strong>Tiny characters</strong><small>Keep companions compact</small></span><input id="tiny" type="checkbox" checked/><span class="switch"></span></label>
-        <label class="toggle-row"><span><strong>Energy effects</strong><small>Sparks and light trails</small></span><input id="particles" type="checkbox" checked/><span class="switch"></span></label>
-        <div class="settings-note">Save reactions and error reactions are configurable in VS Code Settings under <b>DBZ Companions</b>.</div>
-        <div class="copyright-note">Unofficial local fan concept. Dragon Ball characters are the property of their respective owners. Not licensed, affiliated with, or endorsed by Toei Animation, Bird Studio or Shueisha. Do not redistribute this package.</div>
+        <label class="toggle-row"><input id="training" type="checkbox" checked/><span><strong>Sparring</strong><small>Goku and Vegeta spar while you code</small></span></label>
+        <label class="toggle-row"><input id="tiny" type="checkbox" checked/><span><strong>Compact fighters</strong><small>Smaller sprites on the stage</small></span></label>
+        <label class="toggle-row"><input id="particles" type="checkbox" checked/><span><strong>Aura effects</strong><small>Flickering auras and lightning</small></span></label>
+        <p class="hint">Save and error reactions, and the fighters next to your cursor, are in VS Code Settings under DBZ Companions.</p>
+        <p class="hint">Unofficial fan project. Dragon Ball characters belong to their owners (Bird Studio, Shueisha, Toei Animation). Not for redistribution.</p>
       </section>
     </main>
-    <footer class="footer"><span>●</span> LOCAL FAN DEMO <span class="footer-spacer"></span> <span id="statusText">Online</span></footer>
   </div>
   <script nonce="${a.nonce}" src="${a.script}"></script>
 </body></html>`;

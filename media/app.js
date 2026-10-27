@@ -22,11 +22,15 @@
   const fighterName=()=>({both:'Goku & Vegeta',goku:'Goku',vegeta:'Vegeta'})[state.fighter]||'Goku & Vegeta';
   let art={};
   try{art=JSON.parse(document.body.dataset.art||'{}');}catch{art={};}
+  // Shown in the speech bubble only when the fighters need something.
   function idleLabel(){
     if(state.hunger>=80) return 'So hungry... feed us!';
-    if(state.energy<=15) return 'Too tired... need rest';
-    return state.fighter==='both'&&state.training?'Training together!':'Ready to code!';
+    if(state.energy<=15) return 'Too tired... need rest.';
+    if(state.mood<=20) return 'Bored... play with us?';
+    return '';
   }
+  // Power level as a scouter would read it: 416 at level 1, over 9000 at level 20.
+  const powerFor=level=>Math.round(416*Math.pow(1.18,level-1));
   function render(){
     document.body.classList.toggle('tiny',state.tiny);
     document.body.classList.toggle('no-particles',!state.particles);
@@ -47,10 +51,21 @@
       if(src) $$(`.fighter-${fighter} img, .picker [data-art="${fighter}"]`).forEach(img=>{if(img.getAttribute('src')!==src)img.setAttribute('src',src);});
     }
     $('#formText').textContent=form.name;
-    $('#nextFormText').textContent=next?`${next.name} at Lv ${next.level}`:'Maximum power!';
-    $('#xpText').textContent=`${state.xp} XP earned`;$('#xpFill').style.width=(state.xp%50)*2+'%';
-    $('#modeText').textContent=({both:'Goku + Vegeta',goku:'Goku',vegeta:'Vegeta'})[state.fighter]||'Goku + Vegeta';
-    if(!document.body.dataset.reaction || document.body.dataset.reaction==='idle') $('#sceneLabel').textContent=idleLabel();
+    $('#nextFormText').textContent=next?`Next: ${next.name} at Lv ${next.level}`:'Maximum power!';
+    $('#xpText').textContent=`${state.xp%50} / 50 XP`;$('#xpFill').style.width=(state.xp%50)*2+'%';
+    $('#modeText').textContent=fighterName();
+    const power=powerFor(level).toLocaleString('en-US');
+    $('#powerNum').textContent=power;$('#powerDetail').textContent=power;
+    document.body.classList.toggle('over9000',powerFor(level)>9000);
+    $$('#timeline li').forEach(li=>{
+      const f=FORMS.find(x=>x.id===li.dataset.form);
+      li.classList.toggle('reached',level>=f.level);li.classList.toggle('current',f===form);
+    });
+    if(!document.body.dataset.reaction || document.body.dataset.reaction==='idle'){
+      const need=idleLabel();
+      document.body.classList.toggle('needs',!!need);
+      if(need) $('#sceneLabel').textContent=need;
+    }
     api.setState(state);
   }
   function selected(tab){
@@ -63,21 +78,22 @@
     if(lastLevel!==null&&level>lastLevel){
       const form=formFor(level);
       if(form!==formFor(lastLevel)) react('transform',`${fighterName()} went ${form.name}!`);
+      else if(powerFor(level)>9000&&powerFor(lastLevel)<=9000) react('levelup',"It's over 9000!");
       else react('levelup',`Level ${level}! Power rising!`);
     }
     lastLevel=level;
   }
-  const reactions={transform:['⚡','Transformation!'],levelup:['⬆','Level up!'],save:['✨','File saved! Nice work!'],error:['❗','There is an error to fix!'],feed:['🍜','Snack time!'],play:['💙','Let’s have fun!'],rest:['💤','Taking a power nap'],train:['⚔','Training session!']};
+  const reactions={transform:'Transformation!',levelup:'Level up!',save:'Saved! Nice work.',error:'Hm, an error to fix.',feed:'Thanks for the food!',play:'That was fun!',rest:'Power nap...',train:'Hyaaa!'};
   function react(kind,customLabel){
-    const [symbol,defaultLabel]=reactions[kind]||['✦','Ready to code!'];
-    const label=customLabel||defaultLabel;
+    const label=customLabel||reactions[kind]||'';
     clearTimeout(reactionTimeout);
     document.body.classList.remove('reacting');document.body.dataset.reaction='idle';
     // Restart CSS animations for repeated events.
     void document.body.offsetWidth;
     document.body.dataset.reaction=kind;
     document.body.classList.add('reacting');
-    $('#bubble').textContent=symbol;$('#sceneLabel').textContent=label;$('#eventNote').textContent=label;
+    document.body.classList.remove('needs');
+    $('#sceneLabel').textContent=label;$('#eventNote').textContent=label;
     render();
     reactionTimeout=setTimeout(()=>{
       document.body.classList.remove('reacting'); document.body.dataset.reaction='idle';
@@ -95,7 +111,6 @@
   $$('.nav-item').forEach(b=>b.addEventListener('click',()=>selected(b.dataset.tab)));
   $$('.picker').forEach(b=>b.addEventListener('click',()=>{state.fighter=b.dataset.fighter;render();api.postMessage({type:'set',key:'fighter',value:state.fighter});}));
   $$('.action').forEach(b=>b.addEventListener('click',()=>localAction(b.dataset.action)));
-  $('#trainButton').addEventListener('click',()=>localAction('train'));
   for(const name of ['training','tiny','particles']) $('#'+name).addEventListener('change',event=>{state[name]=event.target.checked;render();api.postMessage({type:'set',key:name,value:state[name]});});
   window.addEventListener('message',event=>{
     const m=event.data; if(!m||typeof m!=='object') return;

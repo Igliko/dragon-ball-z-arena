@@ -1,5 +1,6 @@
 """Make Super Saiyan style hair-colour variants of a sprite, plus small head icons.
 
+Run tools/defringe.py on the raw cutout first.
 Usage: python3 tools/make-forms.py media/art/goku.png <out_dir> goku
 Needs Pillow, numpy and scipy. The ssj2 output is not used (SSJ2 reuses the SSJ art).
 """

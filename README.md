@@ -1,4 +1,4 @@
-# DBZ Companions — Visual Fan Prototype (0.3.0)
+# DBZ Companions — Visual Fan Prototype (0.4.0)
 
 Local, unofficial VS Code extension prototype featuring detailed **illustrated 2.5D cutouts of Goku and Vegeta** (derived from the concept art made in this chat). The sprites are **not actual 3D models**, do not rotate in 3D, and are animated through CSS translations, movement, bobbing and reactions. This version prioritizes looking similar to the requested character style rather than the primitive 3D shapes in version 0.1.
 
@@ -6,7 +6,7 @@ Local, unofficial VS Code extension prototype featuring detailed **illustrated 2
 
 1. Open VS Code -> Extensions (the squares icon in the Activity Bar).
 2. Click the `...` menu -> `Install from VSIX...`.
-3. Choose `dbz-companions-local-0.3.0.vsix`. This upgrades the older `dbz-companions-local` extension.
+3. Choose `dbz-companions-local-0.4.0.vsix`. This upgrades the older `dbz-companions-local` extension.
 4. Click the `DBZ Companions` icon in the left Activity Bar to open the view. If missing, open Command Palette `Ctrl+Shift+P` and run `DBZ Companions: Show Companion`.
 5. To see a larger panel, run `DBZ Companions: Open Large Preview`.
 
@@ -20,7 +20,7 @@ Local, unofficial VS Code extension prototype featuring detailed **illustrated 2
 - **Always with you while coding.** Tiny fighter heads ride along at the end of the line you are editing (turn off with `dbzCompanions.editorBuddy`), and the status bar shows your level and form. Click it to open the full view.
 - XP comes from typing code (1 XP per 150 characters), manual saves, Play and Training.
 - Animated character picker: Goku, Vegeta or Both.
-- English Characters / Stats / Settings tabs, tiny characters, training toggle and light effects.
+- Fighters / Stats / Settings tabs that follow your VS Code colour theme, with an illustrated wasteland stage, a scouter power-level readout and manga speech bubbles.
 - Feed, Play, Rest, Training Session actions.
 - Hunger slowly rises and energy slowly drops over time (also while VS Code is closed, up to 8 hours), so the companions need looking after.
 - Save / error reaction events in VS Code. Only manual saves earn XP (max one per 10 seconds), and the error reaction plays only when a new error appears in the active file.
