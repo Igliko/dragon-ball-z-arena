@@ -2,7 +2,7 @@
   "name": "dbz-companions-local",
   "displayName": "DBZ Companions — Visual Fan Prototype",
   "description": "Unofficial local fan prototype with illustrated Goku and Vegeta, animated training and VS Code reactions.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "publisher": "local-prototype",
   "private": true,
   "license": "UNLICENSED",
@@ -83,7 +83,20 @@
         "dbzCompanions.editorBuddy": {
           "type": "boolean",
           "default": true,
-          "description": "Show the fighters standing next to the line you are editing."
+          "description": "Show Goku and Vegeta inside the code editor."
+        },
+        "dbzCompanions.editorFighters": {
+          "type": "string",
+          "enum": [
+            "walk",
+            "cursor"
+          ],
+          "default": "walk",
+          "enumDescriptions": [
+            "Walk around along the bottom of the visible code",
+            "Stand next to the line you are editing"
+          ],
+          "description": "How the fighters behave inside the code editor."
         }
       }
     },
@@ -103,12 +116,13 @@
     }
   },
   "scripts": {
-    "check": "node --check extension.js && node --check media/app.js && node --check media/arena.js && node --check media/arena-view.js"
+    "check": "node --check extension.js && node --check media/app.js && node --check media/arena.js && node --check media/arena-view.js && node --check editor-fighters.js"
   },
   "files": [
     "extension.js",
     "media",
     "assets",
-    "LICENSE-NOTICE.md"
+    "LICENSE-NOTICE.md",
+    "editor-fighters.js"
   ]
 }

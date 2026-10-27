@@ -1,4 +1,4 @@
-# DBZ Companions — Visual Fan Prototype (0.5.0)
+# DBZ Companions — Visual Fan Prototype (0.6.0)
 
 Local, unofficial VS Code extension prototype featuring detailed **illustrated 2.5D cutouts of Goku and Vegeta** (derived from the concept art made in this chat). The sprites are **not actual 3D models**, do not rotate in 3D, and are animated through CSS translations, movement, bobbing and reactions. This version prioritizes looking similar to the requested character style rather than the primitive 3D shapes in version 0.1.
 
@@ -6,7 +6,7 @@ Local, unofficial VS Code extension prototype featuring detailed **illustrated 2
 
 1. Open VS Code -> Extensions (the squares icon in the Activity Bar).
 2. Click the `...` menu -> `Install from VSIX...`.
-3. Choose `dbz-companions-local-0.5.0.vsix`. This upgrades the older `dbz-companions-local` extension.
+3. Choose `dbz-companions-local-0.6.0.vsix`. This upgrades the older `dbz-companions-local` extension.
    After upgrading, run `Developer: Reload Window` (`Ctrl+Shift+P`) so the new version is loaded.
 4. Click the `DBZ Companions` icon in the left Activity Bar to open the view. If missing, open Command Palette `Ctrl+Shift+P` and run `DBZ Companions: Show Companion`.
 5. To see a larger panel, run `DBZ Companions: Open Large Preview`.
@@ -20,7 +20,7 @@ Local, unofficial VS Code extension prototype featuring detailed **illustrated 2
   - Level 10: Super Saiyan 2 (golden hair with lightning)
   - Level 20: Super Saiyan God (red hair)
   - Level 30: Super Saiyan Blue (blue hair)
-- **Always with you while coding.** Goku and Vegeta stand right next to the line you are editing, hop when you type, and transform there too. Toggle them with `DBZ Companions: Toggle Fighters in Editor`. The status bar shows your level and form; click it to open the full view.
+- **Inside your code, too.** Goku and Vegeta walk around along the bottom of the visible code, turn around, run and jump, jump when you save, flinch at new errors and power up when they level up. If you type near the bottom, they move to the top. Set `dbzCompanions.editorFighters` to `cursor` to have them stand next to the line you are editing instead, or use `DBZ Companions: Toggle Fighters in Editor` to hide them. The status bar shows your level and form; click it to open the full view.
 - XP comes from typing code (1 XP per 150 characters), manual saves, Play and Training.
 - Animated character picker: Goku, Vegeta or Both.
 - Fighters / Stats / Settings tabs that follow your VS Code colour theme, with an illustrated wasteland stage, a scouter power-level readout and manga speech bubbles.
