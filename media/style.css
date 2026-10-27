@@ -16,3 +16,25 @@ body.no-particles .stage-stars,body.no-particles .halo-b{display:none}
 @keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.015)}}@keyframes fightBounce{to{transform:translateY(-8px) rotate(-2deg)}}@keyframes twinkle{0%,100%{opacity:.12;transform:scale(.8)}50%{opacity:1;transform:scale(1.4)}}@keyframes sparGoku{0%,23%,100%{transform:translateX(0)}41%{transform:translateX(24px)}55%{transform:translateX(28px)}75%{transform:translateX(-5px)}}@keyframes sparVegeta{0%,23%,100%{transform:translateX(0)}41%{transform:translateX(-20px)}56%{transform:translateX(-22px)}75%{transform:translateX(5px)}}@keyframes hop{0%,100%{transform:translateY(0)}48%{transform:translateY(-23px)}}@keyframes jumpY{0%,100%{transform:translateY(0)}38%{transform:translateY(-20px)}}@keyframes sleepy{0%,100%{transform:translateY(10px) rotate(-3deg) scaleY(.92)}50%{transform:translateY(11px) rotate(-3deg) scaleY(.95)}}@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}@keyframes snack{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}@keyframes popBubble{0%{opacity:0;transform:translateY(8px) scale(.45)}20%,70%{opacity:1;transform:translateY(-3px) scale(1.2)}100%{opacity:0;transform:translateY(-25px) scale(.8)}}
 @media (max-width:275px){.header{padding:12px 8px}.page{padding:8px}.fighter{height:117px!important}.stage{height:183px}.stat-name{width:65px}.action{gap:2px;font-size:11px}.nav-item{font-size:11px}.picker{font-size:10px}}@media(min-width:500px){.shell{max-width:580px;margin:auto;min-height:100vh}.stage{height:295px}.fighter{height:225px!important;bottom:42px}.fighter-goku{left:12%}.fighter-vegeta{right:12%}body.single-goku .fighter-goku,body.single-vegeta .fighter-vegeta{left:28%}.page{padding:15px 25px}.stage-label{top:18px}.nav-item{font-size:14px}.stat-row{margin-bottom:16px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+/* Super Saiyan forms: aura colour per form, lightning for SSJ2, transformation burst. */
+body.form-ssj,body.form-ssj2{--aura:#ffd23f;--aura-glow:#ffb300}body.form-god{--aura:#ff4d5e;--aura-glow:#d4143a}body.form-blue{--aura:#5fd8ff;--aura-glow:#1789ff}
+.fighter::before{content:"";position:absolute;left:8%;right:8%;top:6%;bottom:2px;border-radius:50% 50% 38% 38%;background:radial-gradient(ellipse at 50% 72%,var(--aura,transparent) 0%,transparent 68%);opacity:0;z-index:-1;pointer-events:none;transition:opacity .4s ease}
+body:not(.form-base) .fighter::before{opacity:.7;animation:auraFlicker .32s ease-in-out infinite alternate}
+body:not(.form-base) .fighter-pose img{filter:drop-shadow(0 0 3px var(--aura)) drop-shadow(0 0 10px var(--aura-glow))}
+body.form-ssj2 .fighter::after{content:"⚡";position:absolute;top:8%;right:14%;font-size:18px;color:#bfe9ff;filter:drop-shadow(0 0 5px #6fd0ff);opacity:0;pointer-events:none;animation:boltFlash 1.7s steps(1) infinite}
+body.form-ssj2 .fighter-vegeta::after{left:14%;right:auto;animation-delay:.8s}
+body.no-particles .fighter::after{display:none}body.no-particles .fighter::before{animation:none}
+.power-flash{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 65%,#fff 0%,var(--aura,#ffd23f) 35%,transparent 75%)}
+body[data-reaction="transform"] .power-flash{animation:powerFlash 4.5s ease-out both}
+body[data-reaction="transform"] .stage{animation:stageQuake .09s linear 22}
+body[data-reaction="transform"] .fighter{animation:none!important}
+body[data-reaction="transform"] .fighter-pose{animation:powerUp 4.5s ease-in-out both!important}
+body[data-reaction="transform"] .fighter::before{opacity:1;animation:auraBurst 4.5s ease-out both}
+body[data-reaction="levelup"] .fighter-pose{animation:jumpY .45s ease-in-out 4!important}
+@keyframes auraFlicker{from{transform:scale(.97,1);opacity:.55}to{transform:scale(1.04,1.07);opacity:.8}}
+@keyframes boltFlash{0%,62%,100%{opacity:0}64%,70%{opacity:1}72%{opacity:0}74%,78%{opacity:1}}
+@keyframes powerFlash{0%,35%{opacity:0}42%{opacity:1}100%{opacity:0}}
+@keyframes stageQuake{0%,100%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}75%{transform:translate(2px,-1px)}}
+@keyframes powerUp{0%{transform:translateY(0) scale(1)}30%{transform:translateY(4px) scale(.94,1.04)}40%{transform:translateY(-10px) scale(1.12)}55%,100%{transform:translateY(0) scale(1)}}
+@keyframes auraBurst{0%{transform:scale(.6);opacity:.2}40%{transform:scale(1.6);opacity:1}100%{transform:scale(1);opacity:.7}}
+@media(prefers-reduced-motion:reduce){body[data-reaction] .fighter-pose,body[data-reaction] .stage,body[data-reaction] .power-flash,.fighter::before,.fighter::after{animation-duration:.01ms!important;animation-iteration-count:1!important}}

@@ -13,8 +13,22 @@ const MINUTE = 60000;
 const MAX_OFFLINE_MINUTES = 8 * 60; // Time away from VS Code counts, but only up to 8 hours.
 const SAVE_XP_COOLDOWN = 10000;
 const ERROR_REACTION_COOLDOWN = 15000;
+const XP_PER_LEVEL = 50;
+const CHARS_PER_XP = 150;
+const MAX_CHARS_PER_CHANGE = 20; // Pastes and generated edits count like a few keystrokes.
+// Keep in sync with FORMS in media/app.js. `art` is the sprite/icon suffix.
+const FORMS = [
+  {id:'base', name:'Base form',         level:1,  art:'base'},
+  {id:'ssj',  name:'Super Saiyan',      level:5,  art:'ssj'},
+  {id:'ssj2', name:'Super Saiyan 2',    level:10, art:'ssj'},
+  {id:'god',  name:'Super Saiyan God',  level:20, art:'god'},
+  {id:'blue', name:'Super Saiyan Blue', level:30, art:'blue'}
+];
+const FIGHTER_NAMES = {both:'Goku & Vegeta', goku:'Goku', vegeta:'Vegeta'};
 
 function clamp(v, lo=0, hi=100) { return Math.max(lo, Math.min(hi, v)); }
+function levelFor(xp) { return 1 + Math.floor(xp / XP_PER_LEVEL); }
+function formFor(level) { return FORMS.filter(f => level >= f.level).pop(); }
 function saneState(obj) {
   const state = { ...INITIAL };
   if (!obj || typeof obj !== 'object') return state;
@@ -42,6 +56,67 @@ class CompanionProvider {
     this.lastSaveXpAt = 0;
     this.manualSaves = new Set();
     this.errorCounts = new Map();
+    this.typedChars = 0;
+    this.buddyTypes = new Map();
+    this.status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    this.status.command = 'dbzCompanions.show';
+    this.status.show();
+    this.updateStatus();
+  }
+  dispose() {
+    this.status.dispose();
+    for (const t of this.buddyTypes.values()) t.dispose();
+  }
+  async addXp(amount) {
+    const before = levelFor(this.state.xp);
+    this.state.xp = Math.min(1000000, this.state.xp + amount);
+    const after = levelFor(this.state.xp);
+    if (formFor(after) !== formFor(before)) {
+      vscode.window.showInformationMessage(`⚡ ${FIGHTER_NAMES[this.state.fighter]} reached ${formFor(after).name} at level ${after}!`);
+    }
+  }
+  updateStatus() {
+    const level = levelFor(this.state.xp), form = formFor(level);
+    const next = FORMS.find(f => f.level > level);
+    this.status.text = `$(flame) Lv ${level}${form.id === 'base' ? '' : ' · ' + form.name}`;
+    this.status.tooltip = `${FIGHTER_NAMES[this.state.fighter]}: level ${level}, ${form.name}` +
+      (next ? `\n${next.name} at level ${next.level}` : '\nMaximum power reached!');
+  }
+  // A tiny head icon of each fighter rides along at the end of the line you are editing.
+  buddyType(fighter, art) {
+    const key = `${fighter}-${art}`;
+    if (!this.buddyTypes.has(key)) {
+      const icon = vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'art', 'heads', `${key}.png`));
+      this.buddyTypes.set(key, vscode.window.createTextEditorDecorationType({
+        after: {contentIconPath: icon, width: '18px', height: '16px', margin: '0 0 0 1.2em'},
+        rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
+      }));
+    }
+    return this.buddyTypes.get(key);
+  }
+  updateBuddy(editor=vscode.window.activeTextEditor) {
+    const enabled = vscode.workspace.getConfiguration('dbzCompanions').get('editorBuddy', true);
+    const art = formFor(levelFor(this.state.xp)).art;
+    const fighters = this.state.fighter === 'both' ? ['goku','vegeta'] : [this.state.fighter];
+    const wanted = new Set(enabled && editor ? fighters.map(f => `${f}-${art}`) : []);
+    for (const ed of vscode.window.visibleTextEditors) {
+      for (const [key, type] of this.buddyTypes) {
+        if (ed !== editor || !wanted.has(key)) ed.setDecorations(type, []);
+      }
+    }
+    if (!wanted.size) return;
+    const line = editor.document.lineAt(editor.selection.active.line).range.end;
+    for (const f of fighters) editor.setDecorations(this.buddyType(f, art), [new vscode.Range(line, line)]);
+  }
+  async onTextChange(event) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || event.document !== editor.document) return;
+    for (const change of event.contentChanges) this.typedChars += Math.min(change.text.length, MAX_CHARS_PER_CHANGE);
+    if (this.typedChars < CHARS_PER_XP) return;
+    const xp = Math.floor(this.typedChars / CHARS_PER_XP);
+    this.typedChars %= CHARS_PER_XP;
+    await this.addXp(xp);
+    await this.persist();
   }
   async tick(now=Date.now()) {
     if (!this.state.lastTick) { this.state.lastTick = now; await this.persist(); return; }
@@ -79,9 +154,9 @@ class CompanionProvider {
         const kind=message.action;
         if (!['feed','play','rest','train'].includes(kind)) return;
         if (kind === 'feed') {this.state.hunger=clamp(this.state.hunger-24);this.state.mood=clamp(this.state.mood+4);}
-        if (kind === 'play') {this.state.mood=clamp(this.state.mood+14);this.state.energy=clamp(this.state.energy-7);this.state.xp+=5;}
+        if (kind === 'play') {this.state.mood=clamp(this.state.mood+14);this.state.energy=clamp(this.state.energy-7);await this.addXp(5);}
         if (kind === 'rest') {this.state.energy=clamp(this.state.energy+20);this.state.mood=clamp(this.state.mood+3);}
-        if (kind === 'train') {this.state.energy=clamp(this.state.energy-5);this.state.xp+=4;}
+        if (kind === 'train') {this.state.energy=clamp(this.state.energy-5);await this.addXp(4);}
         await this.persist();
         // The webview that sent the action has already played its reaction.
         this.broadcast({type:'reaction',reaction:kind},webview);
@@ -98,7 +173,7 @@ class CompanionProvider {
     if (!manual || !vscode.workspace.getConfiguration('dbzCompanions').get('reactToSaves',true)) return;
     const now=Date.now(); if (now-this.lastSaveXpAt < SAVE_XP_COOLDOWN) return;
     this.lastSaveXpAt=now;
-    this.state.xp=Math.min(1000000,this.state.xp+1);
+    await this.addXp(1);
     await this.persist();
     this.broadcast({type:'reaction',reaction:'save'});
   }
@@ -119,6 +194,8 @@ class CompanionProvider {
   async persist() {
     this.state = saneState(this.state);
     await this.context.globalState.update('visualPetState',this.state);
+    this.updateStatus();
+    this.updateBuddy();
     this.broadcast({type:'state',state:this.state});
   }
   broadcast(message, except) {for(const w of this.webviews) if (w!==except) w.postMessage(message).then(undefined,()=>{});}
@@ -127,16 +204,21 @@ class CompanionProvider {
     const folder=vscode.Uri.file(path.join(this.context.extensionPath,'media'));
     const url=(p)=>webview.asWebviewUri(vscode.Uri.joinPath(folder,p)).toString();
     const csp=`default-src 'none'; img-src ${webview.cspSource} data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}' ${webview.cspSource};`;
-    return htmlDocument({style:url('style.css'),script:url('app.js'),goku:url('art/goku.png'),vegeta:url('art/vegeta.png'),nonce,csp});
+    const art={};
+    for (const f of ['goku','vegeta']) {
+      art[f]={base:url(`art/${f}.png`)};
+      for (const form of ['ssj','god','blue']) art[f][form]=url(`art/${f}-${form}.png`);
+    }
+    return htmlDocument({style:url('style.css'),script:url('app.js'),goku:art.goku.base,vegeta:art.vegeta.base,art:JSON.stringify(art),nonce,csp});
   }
 }
 function htmlDocument(a) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" />
     <title>DBZ Companions</title></head>
-<body>
+<body data-art='${a.art}'>
   <div class="shell">
-    <header class="header"><span class="brand-icon" aria-hidden="true">✦</span><div class="brand-copy"><strong>DBZ Companions</strong><span>Your tiny coding partners</span></div><span class="version">v0.2</span></header>
+    <header class="header"><span class="brand-icon" aria-hidden="true">✦</span><div class="brand-copy"><strong>DBZ Companions</strong><span>Your tiny coding partners</span></div><span class="version">v0.3</span></header>
     <nav class="nav" aria-label="Companion sections">
       <button type="button" class="nav-item is-active" data-tab="characters" aria-selected="true">Characters</button>
       <button type="button" class="nav-item" data-tab="stats" aria-selected="false">Stats</button>
@@ -146,7 +228,7 @@ function htmlDocument(a) {
       <section id="characters" class="page active" aria-label="Characters">
         <div class="stage-wrap">
           <div class="stage" id="stage">
-            <div class="stage-grid"></div><div class="halo halo-a"></div><div class="halo halo-b"></div>
+            <div class="stage-grid"></div><div class="halo halo-a"></div><div class="halo halo-b"></div><div class="power-flash" aria-hidden="true"></div>
             <div class="fighting-ring"></div><div class="stage-stars" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i></div>
             <div class="fighter fighter-goku" id="goku"><div class="fighter-pose"><img draggable="false" alt="Chibi Goku" src="${a.goku}"/></div><span class="fighter-shadow"></span></div>
             <div class="fighter fighter-vegeta" id="vegeta"><div class="fighter-pose"><img draggable="false" alt="Chibi Vegeta" src="${a.vegeta}"/></div><span class="fighter-shadow"></span></div>
@@ -155,9 +237,9 @@ function htmlDocument(a) {
           </div>
         </div>
         <div class="fighter-picker" aria-label="Select characters">
-          <button type="button" class="picker" data-fighter="goku"><img src="${a.goku}" alt=""/><span>Goku</span></button>
-          <button type="button" class="picker" data-fighter="both"><span class="duo-thumbs"><img src="${a.goku}" alt=""/><img src="${a.vegeta}" alt=""/></span><span>Both</span></button>
-          <button type="button" class="picker" data-fighter="vegeta"><img src="${a.vegeta}" alt=""/><span>Vegeta</span></button>
+          <button type="button" class="picker" data-fighter="goku"><img data-art="goku" src="${a.goku}" alt=""/><span>Goku</span></button>
+          <button type="button" class="picker" data-fighter="both"><span class="duo-thumbs"><img data-art="goku" src="${a.goku}" alt=""/><img data-art="vegeta" src="${a.vegeta}" alt=""/></span><span>Both</span></button>
+          <button type="button" class="picker" data-fighter="vegeta"><img data-art="vegeta" src="${a.vegeta}" alt=""/><span>Vegeta</span></button>
         </div>
         <section class="stat-group compact" aria-label="Character wellbeing">
           <div class="stat-row"><span class="stat-name">❤️ <span>Mood</span></span><div class="track"><div id="moodFill" class="fill blue"></div></div><span class="stat-num" id="moodNum">85%</span></div>
@@ -170,8 +252,10 @@ function htmlDocument(a) {
       </section>
       <section id="stats" class="page" aria-label="Stats" hidden>
         <div class="section-kicker">FIGHTER STATUS</div>
-        <div class="level-card"><span>Current level</span><strong id="level">01</strong><span id="xpText">0 XP earned</span><div class="progress"><div id="xpFill"></div></div><small>Earn XP by saving files and training.</small></div>
+        <div class="level-card"><span>Current level</span><strong id="level">01</strong><span id="xpText">0 XP earned</span><div class="progress"><div id="xpFill"></div></div><small>Earn XP by typing code, saving files and training.</small></div>
         <div class="info-line"><span>🥋 Character mode</span><strong id="modeText">Goku + Vegeta</strong></div>
+        <div class="info-line"><span>🔥 Form</span><strong id="formText">Base form</strong></div>
+        <div class="info-line"><span>⏭ Next form</span><strong id="nextFormText">Super Saiyan at Lv 5</strong></div>
         <div class="info-line"><span>💙 Mood</span><strong id="moodDetail">85%</strong></div>
         <div class="info-line"><span>⚡ Energy</span><strong id="energyDetail">70%</strong></div>
         <div class="info-line"><span>🍜 Hunger</span><strong id="hungerDetail">40%</strong></div>
@@ -199,8 +283,14 @@ function activate(context) {
   provider.lastErrorAt=0;
   provider.tick();
   const timer=setInterval(()=>provider.tick(),MINUTE);
+  provider.updateBuddy();
   context.subscriptions.push(
     {dispose:()=>clearInterval(timer)},
+    provider,
+    vscode.workspace.onDidChangeTextDocument(e=>provider.onTextChange(e)),
+    vscode.window.onDidChangeTextEditorSelection(e=>provider.updateBuddy(e.textEditor)),
+    vscode.window.onDidChangeActiveTextEditor(e=>provider.updateBuddy(e)),
+    vscode.workspace.onDidChangeConfiguration(e=>{if (e.affectsConfiguration('dbzCompanions.editorBuddy')) provider.updateBuddy();}),
     vscode.window.registerWebviewViewProvider('dbzCompanions.view',{resolveWebviewView:v=>provider.bind(v)},{webviewOptions:{retainContextWhenHidden:true}}),
     vscode.commands.registerCommand('dbzCompanions.show',()=>vscode.commands.executeCommand('workbench.view.extension.dbzCompanions')),
     vscode.commands.registerCommand('dbzCompanions.openBeside',()=>provider.openBeside()),
@@ -210,4 +300,4 @@ function activate(context) {
   );
 }
 function deactivate(){}
-module.exports={activate,deactivate,htmlDocument};
+module.exports={activate,deactivate,htmlDocument,levelFor,formFor};
