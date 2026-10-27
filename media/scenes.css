@@ -3,16 +3,19 @@
 .scene i{position:absolute;left:0;right:0;display:block}
 .scene .sky{inset:0}
 .scene .sun{left:auto;right:12%;bottom:30%;width:min(16%,60px);aspect-ratio:1;border-radius:50%}
-.scene .clouds{top:4%;height:34%;background-repeat:repeat-x;background-size:auto 100%}
+.scene .clouds{top:5%;height:60px;background-repeat:repeat-x;background-size:400px 60px;animation:cloudDrift 160s linear infinite}
+@keyframes cloudDrift{to{background-position-x:-400px}}
+@keyframes waveDrift{to{background-position-x:64px}}
 .scene .far{bottom:21%;height:22%;background-repeat:repeat-x;background-size:auto 100%;background-position:0 100%}
 .scene .sea{bottom:21%;height:20%;display:none}
 .scene .near{bottom:20%;height:26%;background-repeat:repeat-x;background-size:auto 100%;background-position:40px 100%}
 .scene .ground{bottom:0;height:21%}
 .scene .ground::after{content:'';position:absolute;left:0;right:0;top:35%;height:1px;opacity:.5;background:var(--stripe)}
 body[data-scene='kamehouse'] .scene .sea{display:block;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' preserveAspectRatio='none'%3E%3Crect width='10' height='10' fill='%232f8fd8'/%3E%3Crect y='0' width='10' height='1.2' fill='%238fd0ff'/%3E%3C/svg%3E") 0 0/100% 100%}
-body[data-scene='kamehouse'] .scene .sea::after{content:'';position:absolute;inset:20% 0 0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 20'%3E%3Cpath d='M0 10q10-6 20 0t20 0 20 0 20 0' fill='none' stroke='%23bfe6ff' stroke-width='1.5' opacity='.7'/%3E%3C/svg%3E") repeat-x 0 0/auto 40%}
+body[data-scene='kamehouse'] .scene .sea::after{content:'';position:absolute;inset:20% 0 0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 20'%3E%3Cpath d='M0 10q10-6 20 0t20 0 20 0 20 0' fill='none' stroke='%23bfe6ff' stroke-width='1.5' opacity='.7'/%3E%3C/svg%3E") repeat-x 0 0/64px 16px;animation:waveDrift 7s linear infinite}
 body[data-scene='kamehouse'] .scene .near{background-repeat:no-repeat;background-position:right 6% bottom;height:34%;bottom:16%}
-body[data-scene='night'] .scene .clouds{top:0;height:60%;background-size:auto 100%}
+body[data-scene='night'] .scene .clouds{top:0;height:60%;background-size:auto 100%;animation:none}
+body[data-scene='chamber'] .scene .near{background-repeat:no-repeat;background-position:left 8% bottom;height:30%;bottom:20%}
 .scene .sky{background:linear-gradient(#5d8fd3,#f2c891 85%)}
 .scene .sun{background:#fff1c9;opacity:.7}
 .scene .clouds{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60'%3E%3Cg fill='white' opacity='.55'%3E%3Cpath d='M112 30a6 6 0 0 1 10-4 8 8 0 0 1 14 2 5 5 0 0 1 4 9h-26a4 4 0 0 1-2-7Z'/%3E%3Cpath d='M286 18a4 4 0 0 1 7-3 6 6 0 0 1 10 1.5 3.5 3.5 0 0 1 3 6.5h-18a3 3 0 0 1-2-5Z'/%3E%3C/g%3E%3C/svg%3E")}
@@ -31,6 +34,12 @@ body[data-scene='kamehouse'] .scene .clouds{background-image:url("data:image/svg
 body[data-scene='kamehouse'] .scene .far{background-image:none;opacity:1}
 body[data-scene='kamehouse'] .scene .near{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 80'%3E%3Cellipse cx='80' cy='80' rx='78' ry='16' fill='%23f0d38e'/%3E%3Cpath d='M112 70c-2-18-2-30 4-44' stroke='%237a5230' stroke-width='3' fill='none'/%3E%3Cpath d='M116 26c-10-6-20-4-26 2 8-2 16 0 24 4-8-1-16 3-20 9 8-5 16-6 22-6 2 6 2 12 0 18 4-6 6-12 6-18 6 2 12 6 16 12-2-8-8-14-14-16 8 0 14 4 18 8-4-8-12-12-20-12 6-4 14-4 20-2-8-6-18-4-26 1Z' fill='%233e9b4f'/%3E%3Crect x='44' y='48' width='40' height='24' fill='%23f48aa0'/%3E%3Cpath d='M38 50l26-18 26 18Z' fill='%23d8343f'/%3E%3Crect x='60' y='58' width='9' height='14' fill='%237a3b2a'/%3E%3Crect x='48' y='54' width='8' height='7' fill='%23bfe6ff'/%3E%3Crect x='72' y='54' width='8' height='7' fill='%23bfe6ff'/%3E%3C/svg%3E")}
 body[data-scene='kamehouse'] .scene .ground{background:linear-gradient(#f3dca2,#dcb874);--stripe:#e6c98b}
+body[data-scene='chamber'] .scene .sky{background:linear-gradient(#e6e2d9,#fbfaf6 60%)}
+body[data-scene='chamber'] .scene .sun{background:transparent;opacity:0}
+body[data-scene='chamber'] .scene .clouds{background-image:none}
+body[data-scene='chamber'] .scene .far{background-image:none;opacity:1}
+body[data-scene='chamber'] .scene .near{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80'%3E%3Crect x='30' y='34' width='118' height='44' fill='%23fdfcf9' stroke='%23d8d1c2' stroke-width='1.2'/%3E%3Cpath d='M22 34h134l-8-10H30Z' fill='%23f1ece1' stroke='%23d8d1c2' stroke-width='1.2'/%3E%3Cpath d='M46 40v38M62 40v38M116 40v38M132 40v38' stroke='%23e3ddd0' stroke-width='3'/%3E%3Crect x='78' y='46' width='22' height='32' fill='%238c8476'/%3E%3Crect x='78' y='46' width='22' height='4' fill='%236f685c'/%3E%3C/svg%3E")}
+body[data-scene='chamber'] .scene .ground{background:#f3f0e8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 12'%3E%3Crect width='48' height='12' fill='%23f3f0e8'/%3E%3Cpath d='M0 .5h48M.5 0v12M24.5 0v12' stroke='%23ddd6c8' stroke-width='1'/%3E%3C/svg%3E") 0 0/48px 12px;--stripe:#e0d9cb}
 body[data-scene='night'] .scene .sky{background:linear-gradient(#0e1433,#3b3f73 90%)}
 body[data-scene='night'] .scene .sun{background:#f2f0dc;opacity:.85}
 body[data-scene='night'] .scene .clouds{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100'%3E%3Ccircle cx='12' cy='14' r='0.8' fill='white' opacity='0.9'/%3E%3Ccircle cx='40' cy='40' r='0.6' fill='white' opacity='0.6'/%3E%3Ccircle cx='71' cy='9' r='0.9' fill='white' opacity='0.8'/%3E%3Ccircle cx='96' cy='30' r='0.5' fill='white' opacity='0.5'/%3E%3Ccircle cx='130' cy='18' r='0.8' fill='white' opacity='0.9'/%3E%3Ccircle cx='160' cy='44' r='0.6' fill='white' opacity='0.6'/%3E%3Ccircle cx='184' cy='12' r='0.7' fill='white' opacity='0.8'/%3E%3Ccircle cx='28' cy='62' r='0.5' fill='white' opacity='0.4'/%3E%3Ccircle cx='110' cy='58' r='0.6' fill='white' opacity='0.5'/%3E%3Ccircle cx='150' cy='70' r='0.5' fill='white' opacity='0.4'/%3E%3Ccircle cx='190' cy='52' r='0.6' fill='white' opacity='0.6'/%3E%3C/svg%3E")}

@@ -5,19 +5,31 @@ const crypto = require('crypto');
 
 const INITIAL = Object.freeze({
   fighter: 'goku', fighterChosen: false, training: true, tiny: true, particles: true,
-  mood: 85, energy: 70, hunger: 40, xp: 0, age: 0, lastTick: 0
+  mood: 85, energy: 70, hunger: 40, xp: 0, age: 0, lastTick: 0,
+  balls: 0, ballOut: 0, ballXp: 0, wishes: 0,
+  chamberUntil: 0, chamberMinutes: 0, chamberOwner: '', sessions: 0, focusTotal: 0
 });
+const STATE_KEY = 'visualPetState';
+const WINDOW_ID = crypto.randomBytes(8).toString('hex'); // Each VS Code window has its own; the saved state is shared.
 const FIGHTERS = new Set(['both','goku','vegeta']);
 const BOOLEAN_OPTIONS = new Set(['training','tiny','particles']);
+const ACTIONS = new Set(['feed','play','rest','train','poke']);
 const OTHER = {goku:'vegeta', vegeta:'goku'};
 const MINUTE = 60000;
 const MAX_OFFLINE_MINUTES = 8 * 60; // Time away from VS Code counts, but only up to 8 hours.
 const SAVE_XP_COOLDOWN = 10000;
+const ACTION_XP_COOLDOWN = 60000; // Play and Train give XP at most once a minute each.
+const POKE_COOLDOWN = 10000;
 const ERROR_REACTION_COOLDOWN = 15000;
 const XP_PER_LEVEL = 50;
 const CHARS_PER_XP = 150;
 const MAX_CHARS_PER_CHANGE = 20; // Pastes and generated edits count like a few keystrokes.
-// Keep in sync with FORMS in media/app.js. `art` is the sprite/icon suffix.
+const ALL_BALLS = 0b1111111; // One bit per Dragon Ball, 1 to 7 stars.
+const FIRST_BALL_XP = 3; // The first ball shows up quickly so the hunt is easy to discover...
+const BALL_XP = 15;      // ...then one per 15 XP of typing (about 2,250 characters).
+const CHAMBER_LENGTHS = [25, 50, 15];
+const WISHES = {power:'Make me stronger', restore:'Restore my fighters'};
+// Keep in sync with FORMS in media/world.js. `art` is the sprite/icon suffix.
 const FORMS = [
   {id:'base', name:'Base form',         level:1,  art:'base'},
   {id:'ssj',  name:'Super Saiyan',      level:5,  art:'ssj'},
@@ -31,6 +43,8 @@ const FIGHTER_NAMES = {both:'Goku & Vegeta', goku:'Goku', vegeta:'Vegeta'};
 function clamp(v, lo=0, hi=100) { return Math.max(lo, Math.min(hi, v)); }
 function levelFor(xp) { return 1 + Math.floor(xp / XP_PER_LEVEL); }
 function formFor(level) { return FORMS.filter(f => level >= f.level).pop(); }
+function ballCount(bits) { let n = 0; for (let i = 0; i < 7; i++) if (bits & 1 << i) n++; return n; }
+function clock(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
 function saneState(obj) {
   const state = { ...INITIAL };
   if (!obj || typeof obj !== 'object') return state;
@@ -39,7 +53,14 @@ function saneState(obj) {
   if (typeof obj.fighterChosen === 'boolean') state.fighterChosen = obj.fighterChosen;
   for (const k of ['mood','energy','hunger']) if (Number.isFinite(obj[k])) state[k] = clamp(Math.round(obj[k]));
   if (Number.isSafeInteger(obj.xp)) state.xp = clamp(obj.xp,0,1000000);
-  for (const k of ['age','lastTick']) if (Number.isSafeInteger(obj[k]) && obj[k] >= 0) state[k] = obj[k];
+  for (const k of ['age','lastTick','ballXp','wishes','chamberUntil','sessions','focusTotal']) if (Number.isSafeInteger(obj[k]) && obj[k] >= 0) state[k] = obj[k];
+  if (Number.isSafeInteger(obj.balls)) state.balls = clamp(obj.balls,0,ALL_BALLS);
+  if (Number.isSafeInteger(obj.ballOut)) state.ballOut = clamp(obj.ballOut,0,7);
+  if (Number.isSafeInteger(obj.chamberMinutes)) state.chamberMinutes = clamp(obj.chamberMinutes,0,240);
+  if (typeof obj.chamberOwner === 'string') state.chamberOwner = obj.chamberOwner.slice(0,32);
+  // A ball that is already collected can't be waiting in the arena, and none wait while Shenron does.
+  if (state.ballOut && (state.balls & 1 << state.ballOut - 1 || state.balls === ALL_BALLS)) state.ballOut = 0;
+  if (!state.chamberUntil) Object.assign(state, {chamberMinutes:0, chamberOwner:''});
   return state;
 }
 // One minute of companion life: hunger slowly rises, energy slowly drops,
@@ -53,21 +74,35 @@ function liveMinute(state) {
 class CompanionProvider {
   constructor(context) {
     this.context = context;
-    this.state = saneState(context.globalState.get('visualPetState'));
+    this.state = saneState(context.globalState.get(STATE_KEY));
     this.webviews = new Set();
     this.arenaViews = new Set();
+    this.readyViews = new WeakSet();
+    this.pendingArena = null;
     this.lastErrorAt = 0;
     this.lastSaveXpAt = 0;
+    this.lastPokeAt = 0;
+    this.actionXpAt = {};
     this.manualSaves = new Set();
     this.errorCounts = new Map();
     this.typedChars = 0;
     this.status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    this.status.command = 'dbzCompanions.show';
+    this.status.command = 'dbzCompanions.start';
     this.status.show();
+    this.chamberStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
+    this.chamberStatus.command = 'dbzCompanions.leaveChamber';
+    this.chamberStatus.tooltip = 'Hyperbolic Time Chamber: typing XP is doubled. Click to leave early.';
+    this.chamberKey = '';
     this.updateStatus();
   }
   dispose() {
-    this.status.dispose();
+    clearTimeout(this.chamberTimer); clearInterval(this.chamberClock);
+    this.status.dispose(); this.chamberStatus.dispose();
+  }
+  // VS Code windows share the saved state: start from the latest copy before changing it.
+  sync() {
+    const saved = this.context.globalState.get(STATE_KEY);
+    if (saved) this.state = saneState(saved);
   }
   react(kind, except) {
     this.broadcast({type:'reaction',reaction:kind}, except);
@@ -77,15 +112,92 @@ class CompanionProvider {
     this.state.xp = Math.min(1000000, this.state.xp + amount);
     const after = levelFor(this.state.xp);
     if (formFor(after) !== formFor(before)) {
-      vscode.window.showInformationMessage(`⚡ ${FIGHTER_NAMES[this.state.fighter]} reached ${formFor(after).name} at level ${after}!`);
+      vscode.window.showInformationMessage(`${FIGHTER_NAMES[this.state.fighter]} reached ${formFor(after).name} at level ${after}!`);
     }
   }
+  // Play and Train give XP at most once a minute each, so the buttons can't be farmed.
+  async actionXp(kind, amount) {
+    const now = Date.now();
+    if (now - (this.actionXpAt[kind] || 0) < ACTION_XP_COOLDOWN) return;
+    this.actionXpAt[kind] = now;
+    await this.addXp(amount);
+  }
   updateStatus() {
-    const level = levelFor(this.state.xp), form = formFor(level);
+    const s = this.state, level = levelFor(s.xp), form = formFor(level);
     const next = FORMS.find(f => f.level > level);
     this.status.text = `$(flame) Lv ${level}${form.id === 'base' ? '' : ' · ' + form.name}`;
-    this.status.tooltip = `${FIGHTER_NAMES[this.state.fighter]}: level ${level}, ${form.name}` +
-      (next ? `\n${next.name} at level ${next.level}` : '\nMaximum power reached!');
+    this.status.tooltip = [`${FIGHTER_NAMES[s.fighter]}: level ${level}, ${form.name}`,
+      next ? `${next.name} at level ${next.level}` : 'Maximum power reached!',
+      `Dragon Balls: ${ballCount(s.balls)} of 7` + (s.ballOut ? ' (one is waiting in the arena)' : ''),
+      'Click to open the DBZ Arena'].join('\n');
+  }
+  inChamber(now=Date.now()) { return this.state.chamberUntil > now; }
+  // The countdown in the status bar and the timer that ends a Time Chamber session.
+  updateChamber() {
+    const s = this.state, key = `${s.chamberUntil}:${s.chamberOwner}`;
+    if (key === this.chamberKey) return;
+    this.chamberKey = key;
+    clearTimeout(this.chamberTimer); clearInterval(this.chamberClock);
+    vscode.commands.executeCommand('setContext', 'dbzCompanions.inChamber', !!s.chamberUntil).then(undefined, ()=>{});
+    if (!s.chamberUntil) { this.chamberStatus.hide(); return; }
+    // The window that started the session ends it; another one steps in if that window was closed.
+    const grace = s.chamberOwner === WINDOW_ID ? 0 : MINUTE;
+    this.chamberTimer = setTimeout(() => this.finishChamber(), Math.max(0, s.chamberUntil + grace - Date.now()));
+    const show = () => { this.chamberStatus.text = `$(watch) ${clock(this.state.chamberUntil - Date.now())}`; };
+    show();
+    this.chamberClock = setInterval(show, 1000);
+    this.chamberStatus.show();
+  }
+  async enterChamber() {
+    this.sync();
+    if (this.inChamber()) {
+      const pick = await vscode.window.showInformationMessage(`You are in the Hyperbolic Time Chamber: ${clock(this.state.chamberUntil - Date.now())} left.`, 'Leave Early');
+      if (pick) await this.leaveChamber(true);
+      return;
+    }
+    const pick = await vscode.window.showQuickPick(CHAMBER_LENGTHS.map(minutes => ({
+      label: `${minutes} minutes`, minutes,
+      description: minutes === 25 ? 'A classic focus session' : minutes > 25 ? 'Long training' : 'Quick training'
+    })), {placeHolder: 'Hyperbolic Time Chamber: train without distractions. Typing XP is doubled inside.'});
+    if (!pick) return;
+    this.sync();
+    Object.assign(this.state, {chamberUntil: Date.now() + pick.minutes * MINUTE, chamberMinutes: pick.minutes, chamberOwner: WINDOW_ID});
+    await this.persist();
+    vscode.commands.executeCommand('dbzCompanions.start').then(undefined, ()=>{});
+  }
+  async leaveChamber(confirmed=false) {
+    this.sync();
+    if (!this.state.chamberUntil) return;
+    if (!confirmed) {
+      const pick = await vscode.window.showWarningMessage('Leave the Hyperbolic Time Chamber early? You will not get the training bonus.', {modal:true}, 'Leave');
+      if (pick !== 'Leave') return;
+      this.sync();
+    }
+    Object.assign(this.state, {chamberUntil:0, chamberMinutes:0, chamberOwner:''});
+    await this.persist();
+  }
+  async finishChamber() {
+    this.sync();
+    const s = this.state;
+    if (!s.chamberUntil) return;
+    if (Date.now() < s.chamberUntil) { this.chamberKey = ''; this.updateChamber(); return; }
+    const minutes = s.chamberMinutes;
+    Object.assign(s, {chamberUntil:0, chamberMinutes:0, chamberOwner:'', sessions:s.sessions + 1, focusTotal:s.focusTotal + minutes});
+    await this.addXp(minutes);
+    await this.persist();
+    this.react('chamber');
+    vscode.window.showInformationMessage(`Time Chamber training complete: ${minutes} minutes. +${minutes} XP`);
+  }
+  // Coding uncovers Dragon Balls: one waits in the arena until it is collected.
+  findBalls(xp) {
+    const s = this.state;
+    if (!vscode.workspace.getConfiguration('dbzCompanions').get('dragonBalls', true)) return;
+    if (s.ballOut || s.balls === ALL_BALLS) return;
+    s.ballXp += xp;
+    if (s.ballXp < (s.balls || s.wishes ? BALL_XP : FIRST_BALL_XP)) return;
+    const missing = [1,2,3,4,5,6,7].filter(n => !(s.balls & 1 << n - 1));
+    s.ballOut = missing[Math.floor(Math.random() * missing.length)];
+    s.ballXp = 0;
   }
   async onTextChange(event) {
     const editor = vscode.window.activeTextEditor;
@@ -94,16 +206,25 @@ class CompanionProvider {
     if (this.typedChars < CHARS_PER_XP) return;
     const xp = Math.floor(this.typedChars / CHARS_PER_XP);
     this.typedChars %= CHARS_PER_XP;
-    await this.addXp(xp);
+    this.sync();
+    await this.addXp(this.inChamber() ? xp * 2 : xp);
+    this.findBalls(xp);
     await this.persist();
   }
   async tick(now=Date.now()) {
+    const before = JSON.stringify(this.state);
+    this.sync();
     if (!this.state.lastTick) { this.state.lastTick = now; await this.persist(); return; }
     const minutes = Math.floor((now - this.state.lastTick) / MINUTE);
-    if (minutes <= 0) return;
-    for (let i = 0; i < Math.min(minutes, MAX_OFFLINE_MINUTES); i++) liveMinute(this.state);
-    this.state.lastTick += minutes * MINUTE;
-    await this.persist();
+    if (minutes > 0) {
+      for (let i = 0; i < Math.min(minutes, MAX_OFFLINE_MINUTES); i++) liveMinute(this.state);
+      this.state.lastTick += minutes * MINUTE;
+      await this.persist();
+    } else if (JSON.stringify(this.state) !== before) {
+      // Another window changed something: show it here too.
+      this.updateStatus(); this.updateChamber();
+      this.broadcast({type:'state',state:this.state});
+    }
   }
   bind(view) {
     view.webview.options = {enableScripts:true, localResourceRoots:[vscode.Uri.file(path.join(this.context.extensionPath,'media'))]};
@@ -118,14 +239,20 @@ class CompanionProvider {
     const listener = this.register(view.webview);
     view.onDidDispose(() => {this.webviews.delete(view.webview); this.arenaViews.delete(view); listener.dispose();});
   }
-  // Senzu beans feed the fighters, so drop them in one place only: the Explorer arena if it is showing.
-  throwSenzu() {
-    const arena = [...this.arenaViews].find(v => v.visible);
-    if (arena) arena.webview.postMessage({type:'arena',action:'senzu'});
-    else this.broadcast({type:'arena',action:'senzu'});
+  // Senzu beans and ki blasts from the title bar or the Command Palette go to the
+  // arena only (beans feed the fighters, so they must land in one place). It is opened if needed.
+  async toArena(message) {
+    const ready = () => [...this.arenaViews].find(v => v.visible && this.readyViews.has(v.webview));
+    const view = ready();
+    if (view) { view.webview.postMessage(message); return; }
+    this.pendingArena = message;
+    await vscode.commands.executeCommand('dbzCompanions.start').then(undefined, ()=>{});
+    // An arena that was only hidden is ready straight away; a new one picks it up when it says "ready".
+    setTimeout(() => { const v = ready(); if (v && this.pendingArena === message) { this.pendingArena = null; v.webview.postMessage(message); } }, 300);
   }
   // Like vscode-pets: start with one fighter, then add the other one.
   async setFighter(fighter) {
+    this.sync();
     this.state.fighter = fighter;
     this.state.fighterChosen = true;
     await this.persist();
@@ -138,6 +265,7 @@ class CompanionProvider {
     if (pick) await this.setFighter(pick.id);
   }
   async addFighter() {
+    this.sync();
     if (!this.state.fighterChosen) return this.chooseFighter();
     if (this.state.fighter === 'both') {
       vscode.window.showInformationMessage('Goku and Vegeta are both in the arena already.');
@@ -146,6 +274,7 @@ class CompanionProvider {
     await this.setFighter('both');
   }
   async removeFighter() {
+    this.sync();
     if (this.state.fighter !== 'both') {
       vscode.window.showInformationMessage(`${FIGHTER_NAMES[this.state.fighter]} is your only fighter. Use "Choose Fighter" to switch.`);
       return;
@@ -161,26 +290,58 @@ class CompanionProvider {
     const listener=this.register(panel.webview);
     panel.onDidDispose(()=>{this.webviews.delete(panel.webview); listener.dispose();});
   }
+  config() {
+    const c = vscode.workspace.getConfiguration('dbzCompanions'), scene = c.get('background','wasteland');
+    return {type:'config', config:{scene:SCENES.includes(scene) ? scene : 'wasteland', hud:c.get('showHud',true), dragonBalls:c.get('dragonBalls',true)}};
+  }
   register(webview) {
     this.webviews.add(webview);
     return webview.onDidReceiveMessage(async message=>{
       if (!message || typeof message !== 'object') return;
-      if (message.type === 'ready') { await webview.postMessage({type:'state',state:this.state}); return; }
+      if (message.type === 'ready') {
+        this.readyViews.add(webview);
+        await webview.postMessage({type:'state',state:this.state});
+        await webview.postMessage(this.config());
+        const pending = this.pendingArena;
+        if (pending && [...this.arenaViews].some(v => v.webview === webview)) { this.pendingArena = null; webview.postMessage(pending); }
+        return;
+      }
+      this.sync();
+      const s = this.state;
       if (message.type === 'set') {
-        if (message.key === 'fighter' && FIGHTERS.has(message.value)) {this.state.fighter=message.value;this.state.fighterChosen=true;}
-        else if (BOOLEAN_OPTIONS.has(message.key) && typeof message.value === 'boolean') this.state[message.key]=message.value;
+        if (message.key === 'fighter' && FIGHTERS.has(message.value)) {s.fighter=message.value;s.fighterChosen=true;}
+        else if (BOOLEAN_OPTIONS.has(message.key) && typeof message.value === 'boolean') s[message.key]=message.value;
         else return;
         await this.persist();
       } else if (message.type === 'action') {
         const kind=message.action;
-        if (!['feed','play','rest','train'].includes(kind)) return;
-        if (kind === 'feed') {this.state.hunger=clamp(this.state.hunger-24);this.state.mood=clamp(this.state.mood+4);}
-        if (kind === 'play') {this.state.mood=clamp(this.state.mood+14);this.state.energy=clamp(this.state.energy-7);await this.addXp(5);}
-        if (kind === 'rest') {this.state.energy=clamp(this.state.energy+20);this.state.mood=clamp(this.state.mood+3);}
-        if (kind === 'train') {this.state.energy=clamp(this.state.energy-5);await this.addXp(4);}
+        if (!ACTIONS.has(kind)) return;
+        if (kind === 'poke') {
+          // Petting cheers them up a little.
+          const now = Date.now(); if (now - this.lastPokeAt < POKE_COOLDOWN) return;
+          this.lastPokeAt = now; s.mood = clamp(s.mood + 2);
+          await this.persist();
+          return;
+        }
+        if (kind === 'feed') {s.hunger=clamp(s.hunger-24);s.mood=clamp(s.mood+4);}
+        if (kind === 'play') {s.mood=clamp(s.mood+14);s.energy=clamp(s.energy-7);await this.actionXp('play',5);}
+        if (kind === 'rest') {s.energy=clamp(s.energy+20);s.mood=clamp(s.mood+3);}
+        if (kind === 'train') {s.energy=clamp(s.energy-5);await this.actionXp('train',4);}
         await this.persist();
         // The webview that sent the action has already played its reaction.
         this.react(kind,webview);
+      } else if (message.type === 'collect') {
+        if (!s.ballOut) return;
+        s.balls |= 1 << s.ballOut - 1;
+        s.ballOut = 0;
+        await this.persist();
+      } else if (message.type === 'wish') {
+        if (s.balls !== ALL_BALLS || !WISHES[message.wish]) return;
+        if (message.wish === 'power') await this.addXp(XP_PER_LEVEL);
+        if (message.wish === 'restore') Object.assign(s, {mood:100, energy:100, hunger:0});
+        // The Dragon Balls scatter across the world again.
+        s.balls = 0; s.ballXp = 0; s.wishes += 1;
+        await this.persist();
       }
     });
   }
@@ -194,6 +355,7 @@ class CompanionProvider {
     if (!manual || !vscode.workspace.getConfiguration('dbzCompanions').get('reactToSaves',true)) return;
     const now=Date.now(); if (now-this.lastSaveXpAt < SAVE_XP_COOLDOWN) return;
     this.lastSaveXpAt=now;
+    this.sync();
     await this.addXp(1);
     await this.persist();
     this.react('save');
@@ -214,8 +376,9 @@ class CompanionProvider {
   }
   async persist() {
     this.state = saneState(this.state);
-    await this.context.globalState.update('visualPetState',this.state);
+    await this.context.globalState.update(STATE_KEY,this.state);
     this.updateStatus();
+    this.updateChamber();
     this.broadcast({type:'state',state:this.state});
   }
   broadcast(message, except) {for(const w of this.webviews) if (w!==except) w.postMessage(message).then(undefined,()=>{});}
@@ -229,8 +392,9 @@ class CompanionProvider {
       art[f]={base:url(`art/${f}.png`)};
       for (const form of ['ssj','god','blue']) art[f][form]=url(`art/${f}-${form}.png`);
     }
-    const scene=vscode.workspace.getConfiguration('dbzCompanions').get('background','wasteland');
-    return render({scenes:url('scenes.css'),scene:SCENES.includes(scene)?scene:'wasteland',style:url('style.css'),script:url('app.js'),arenaView:url('arena-view.js'),arena:url('arena.js'),art:JSON.stringify(art),nonce,csp});
+    const scene=this.config().config.scene;
+    const scripts=['arena.js','shenron.js','world.js',render===arenaDocument?'arena-view.js':'app.js'].map(url);
+    return render({scenes:url('scenes.css'),scene,style:url('style.css'),scripts,art:JSON.stringify(art),nonce,csp});
   }
 }
 // Arena background; each layer is themed and repeats sideways in media/scenes.css.
@@ -250,6 +414,7 @@ const ICONS = {
   train: '<path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z"/>'
 };
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
+const scriptTags = a => a.scripts.map(src => `<script nonce="${a.nonce}" src="${src}"></script>`).join('\n  ');
 function arenaDocument(a) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" /><link rel="stylesheet" href="${a.scenes}" />
@@ -258,11 +423,9 @@ function arenaDocument(a) {
   <div class="stage" id="stage" title="Click the ground to drop a senzu bean">
     ${SCENE_HTML}
     <div class="power-flash" aria-hidden="true"></div>
-    <span class="speech" id="sceneLabel" aria-live="polite"></span>
     ${CHOOSER_HTML}
   </div>
-  <script nonce="${a.nonce}" src="${a.arena}"></script>
-  <script nonce="${a.nonce}" src="${a.arenaView}"></script>
+  ${scriptTags(a)}
 </body></html>`;
 }
 function htmlDocument(a) {
@@ -280,9 +443,7 @@ function htmlDocument(a) {
       <section id="characters" class="page active" aria-label="Fighters">
         <div class="stage" id="stage">
           ${SCENE_HTML}
-          <div class="scouter" aria-label="Power level">PWR<b id="powerNum">416</b></div>
           <div class="power-flash" aria-hidden="true"></div>
-          <span class="speech" id="sceneLabel" aria-live="polite"></span>
           ${CHOOSER_HTML}
         </div>
         <div class="segmented" role="group" aria-label="Choose fighters">
@@ -319,22 +480,24 @@ function htmlDocument(a) {
         </ol>
         <div class="info-line"><span>Power level</span><strong id="powerDetail">416</strong></div>
         <div class="info-line"><span>Fighters</span><strong id="modeText">Goku + Vegeta</strong></div>
+        <div class="info-line"><span>Dragon Balls</span><strong id="ballsDetail">0 of 7</strong></div>
+        <div class="info-line"><span>Wishes granted</span><strong id="wishesDetail">0</strong></div>
+        <div class="info-line"><span>Time Chamber</span><strong id="chamberDetail">Not yet</strong></div>
         <div class="info-line"><span>Mood</span><strong id="moodDetail">85%</strong></div>
         <div class="info-line"><span>Energy</span><strong id="energyDetail">70%</strong></div>
         <div class="info-line"><span>Hunger</span><strong id="hungerDetail">40%</strong></div>
-        <p class="hint">Earn XP by typing code, saving files and training.</p>
+        <p class="hint">Earn XP by typing code, saving files and training. Typing also uncovers Dragon Balls: find all seven and Shenron grants a wish.</p>
       </section>
       <section id="settings" class="page" aria-label="Settings" hidden>
         <label class="toggle-row"><input id="training" type="checkbox" checked/><span><strong>Sparring</strong><small>Goku and Vegeta spar while you code</small></span></label>
-        <label class="toggle-row"><input id="tiny" type="checkbox" checked/><span><strong>Compact fighters</strong><small>Smaller sprites on the stage</small></span></label>
+        <label class="toggle-row"><input id="tiny" type="checkbox" checked/><span><strong>Compact fighters</strong><small>Smaller sprites on the stage and in the arena</small></span></label>
         <label class="toggle-row"><input id="particles" type="checkbox" checked/><span><strong>Aura effects</strong><small>Flickering auras and lightning</small></span></label>
-        <p class="hint">Save and error reactions, the arena position and its background are in VS Code Settings under DBZ Companions.</p>
+        <p class="hint">Save and error reactions, Dragon Balls, the scouter, the arena position and its background are in VS Code Settings under DBZ Companions.</p>
         <p class="hint">Unofficial fan project. Dragon Ball characters belong to their owners (Bird Studio, Shueisha, Toei Animation). Not for redistribution.</p>
       </section>
     </main>
   </div>
-  <script nonce="${a.nonce}" src="${a.arena}"></script>
-  <script nonce="${a.nonce}" src="${a.script}"></script>
+  ${scriptTags(a)}
 </body></html>`;
 }
 
@@ -344,6 +507,7 @@ function activate(context) {
   provider.onDiagnostics({uris:vscode.languages.getDiagnostics().map(([uri])=>uri)});
   provider.lastErrorAt=0;
   provider.tick();
+  provider.updateChamber();
   const timer=setInterval(()=>provider.tick(),MINUTE);
   // Open the arena once after install so the fighters are visible straight away.
   if (!context.globalState.get('arenaShown')) {
@@ -355,7 +519,7 @@ function activate(context) {
     provider,
     vscode.workspace.onDidChangeTextDocument(e=>provider.onTextChange(e)),
     vscode.workspace.onDidChangeConfiguration(e=>{
-      if (e.affectsConfiguration('dbzCompanions.background')) provider.broadcast({type:'scene',scene:vscode.workspace.getConfiguration('dbzCompanions').get('background','wasteland')});
+      if (['background','showHud','dragonBalls'].some(k=>e.affectsConfiguration('dbzCompanions.'+k))) provider.broadcast(provider.config());
     }),
     vscode.commands.registerCommand('dbzCompanions.start',()=>{
       const position=vscode.workspace.getConfiguration('dbzCompanions').get('position','panel');
@@ -368,8 +532,10 @@ function activate(context) {
     }),
     vscode.window.registerWebviewViewProvider('dbzCompanions.arena',{resolveWebviewView:v=>provider.bindArena(v)},{webviewOptions:{retainContextWhenHidden:true}}),
     vscode.window.registerWebviewViewProvider('dbzCompanions.arenaPanel',{resolveWebviewView:v=>provider.bindArena(v)},{webviewOptions:{retainContextWhenHidden:true}}),
-    vscode.commands.registerCommand('dbzCompanions.throwSenzu',()=>provider.throwSenzu()),
-    vscode.commands.registerCommand('dbzCompanions.kiBlast',()=>provider.broadcast({type:'arena',action:'blast'})),
+    vscode.commands.registerCommand('dbzCompanions.throwSenzu',()=>provider.toArena({type:'arena',action:'senzu'})),
+    vscode.commands.registerCommand('dbzCompanions.kiBlast',()=>provider.toArena({type:'arena',action:'blast'})),
+    vscode.commands.registerCommand('dbzCompanions.enterChamber',()=>provider.enterChamber()),
+    vscode.commands.registerCommand('dbzCompanions.leaveChamber',()=>provider.leaveChamber()),
     vscode.window.registerWebviewViewProvider('dbzCompanions.view',{resolveWebviewView:v=>provider.bind(v)},{webviewOptions:{retainContextWhenHidden:true}}),
     vscode.commands.registerCommand('dbzCompanions.show',()=>vscode.commands.executeCommand('workbench.view.extension.dbzCompanions')),
     vscode.commands.registerCommand('dbzCompanions.openBeside',()=>provider.openBeside()),
@@ -382,4 +548,4 @@ function activate(context) {
   );
 }
 function deactivate(){}
-module.exports={activate,deactivate,htmlDocument,arenaDocument,levelFor,formFor};
+module.exports={activate,deactivate,htmlDocument,arenaDocument,levelFor,formFor,saneState};

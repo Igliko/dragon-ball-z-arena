@@ -30,16 +30,25 @@ main{flex:1}
 /* Stage */
 .stage{position:relative;height:200px;border-radius:4px;overflow:hidden;isolation:isolate;background:#6f9bd6;cursor:pointer;user-select:none}
 
-/* Scouter readout */
-.scouter{position:absolute;top:8px;left:8px;z-index:6;padding:3px 7px 3px 6px;font:600 10px/1.2 var(--vscode-editor-font-family,ui-monospace,monospace);letter-spacing:.06em;color:#8dffb0;background:rgba(6,40,22,.62);border:1px solid rgba(141,255,176,.45);clip-path:polygon(0 0,100% 0,100% 70%,calc(100% - 6px) 100%,0 100%)}
-.scouter b{font-weight:700;color:#d6ffe2;margin-left:4px}
-body.over9000 .scouter{color:#ff9b9b;border-color:rgba(255,120,120,.6);background:rgba(60,8,8,.65)}
-body.over9000 .scouter b{color:#ffd9d9}
-
-/* Manga speech bubble */
-.speech{position:absolute;top:10px;right:10px;max-width:62%;z-index:6;padding:5px 9px;font-size:11px;font-weight:700;line-height:1.25;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:12px;opacity:0;transform:translateY(-4px) scale(.92);transform-origin:80% 100%;transition:opacity .18s ease,transform .18s ease;pointer-events:none}
-.speech::after{content:"";position:absolute;bottom:-8px;right:22px;width:10px;height:10px;background:#fff;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:skewX(-25deg) rotate(45deg)}
-body.needs .speech{opacity:1;transform:none}
+/* Scouter HUD (top left) and Dragon Ball tracker (top right) */
+.hud{position:absolute;top:6px;left:6px;z-index:6;display:grid;gap:1px;padding:3px 7px 4px 6px;font:600 10px/1.25 var(--vscode-editor-font-family,ui-monospace,monospace);letter-spacing:.06em;text-transform:uppercase;color:#8dffb0;background:rgba(6,40,22,.62);border:1px solid rgba(141,255,176,.45);clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%);pointer-events:none}
+.hud{max-width:calc(100% - 104px)}
+.hud-row{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud b{font-weight:700;color:#d6ffe2;margin-left:4px}
+.hud-form{margin-left:7px;opacity:.85}
+.hud-row[hidden]{display:none}
+.hud-chamber{color:#fff6c8}.hud-chamber b{color:#fff}
+.hud-xp{display:block;height:2px;margin-top:2px;background:rgba(141,255,176,.22)}
+.hud-xp i{display:block;height:100%;width:0;background:#8dffb0;transition:width .4s ease}
+body.over9000 .hud{color:#ff9b9b;border-color:rgba(255,120,120,.6);background:rgba(60,8,8,.65)}
+body.over9000 .hud b{color:#ffd9d9}
+body.over9000 .hud-xp{background:rgba(255,155,155,.25)}body.over9000 .hud-xp i{background:#ff9b9b}
+.balls{position:absolute;top:6px;right:6px;z-index:6;display:flex;gap:3px;padding:3px;border-radius:8px;background:rgba(0,0,0,.3);cursor:default}
+.balls[hidden],body.no-hud .hud,body.no-hud .balls,body.unchosen .hud{display:none}
+.balls i{position:relative;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+.balls i.got{background:radial-gradient(circle at 36% 30%,#fff3c0 0 10%,#ffc23d 30%,#f28a00 66%,#b35200);box-shadow:none}
+.balls i.got::after{content:"";position:absolute;left:3px;top:3px;width:3px;height:3px;border-radius:50%;background:#d4181f}
+.balls i.new{animation:ballPop .7s ease-out}
 
 /* Fighter picker: segmented control */
 .segmented{display:grid;grid-template-columns:repeat(3,1fr);margin:10px 0 14px;border:1px solid var(--line);border-radius:4px;overflow:hidden}
@@ -120,16 +129,99 @@ body.form-blue .form-chip{background:#2f8fea;color:#fff}
 .is-power .fighter-pose{animation:powerShake .07s linear infinite}
 .is-hit .fighter-pose{animation:hitFlash .12s linear 3}
 .is-blast .fighter-pose{animation:none;transform:rotate(-5deg) scale(1.03)}
+.is-fetch .fighter-pose{animation:runBob .22s ease-in-out infinite}
+.is-cheer .fighter-pose{animation:cheer .45s ease-in-out infinite alternate}
+.is-train .fighter-pose{animation:kata .3s ease-in-out infinite alternate}
 .say{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%) scale(.9);white-space:nowrap;padding:3px 7px;font-size:10px;font-weight:700;line-height:1.2;color:var(--ink);background:#fff;border:1.5px solid var(--ink);border-radius:9px;opacity:0;transition:opacity .15s,transform .15s;pointer-events:none;z-index:8}
 .say::after{content:"";position:absolute;top:100%;left:50%;width:6px;height:6px;margin:-3px 0 0 -3px;background:#fff;border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);transform:rotate(45deg)}
 .fighter.saying .say{opacity:1;transform:translateX(-50%)}
 .fighter.say-left .say{left:auto;right:0;transform:none}.fighter.say-left .say::after{left:auto;right:10px}
 .fighter.say-right .say{left:0;transform:none}.fighter.say-right .say::after{left:12px}
+.fighter.is-cheer .say{bottom:calc(100% + 26px)}
 .ki{position:absolute;z-index:4;width:18px;height:18px;margin:0 0 -9px -9px;border-radius:50%;pointer-events:none;transform:scale(calc(.3 + var(--charge,0)*.9));background:radial-gradient(circle,#fff 0 30%,#7fd3ff 55%,transparent 72%);box-shadow:0 0 12px 4px #58bfff}
 .ki-vegeta{background:radial-gradient(circle,#fff 0 30%,#c99bff 55%,transparent 72%);box-shadow:0 0 12px 4px #a66bff}
 .beam{position:absolute;z-index:4;height:12px;margin-bottom:-6px;border-radius:6px;pointer-events:none;background:linear-gradient(#58bfff,#e9f8ff 35%,#fff 50%,#e9f8ff 65%,#58bfff);box-shadow:0 0 10px 3px #58bfffaa;animation:beamFire .7s ease-out both}
 .beam-vegeta{background:linear-gradient(#a66bff,#f1e6ff 35%,#fff 50%,#f1e6ff 65%,#a66bff);box-shadow:0 0 10px 3px #a66bffaa}
 .senzu{position:absolute;z-index:3;width:8px;height:11px;margin-left:-4px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 35% 30%,#c6f28a,#5fa52c 70%);box-shadow:0 1px 0 #2f5c13;transition:bottom .55s cubic-bezier(.55,0,1,.6);pointer-events:none}
+/* Dragon Ball waiting on the ground: click it and a fighter fetches it */
+.dball{position:absolute;z-index:3;width:18px;height:18px;margin:0 0 -1px -9px;padding:0;border:0;border-radius:50%;cursor:pointer;background:radial-gradient(circle at 36% 30%,#fff3c0 0 7%,#ffc23d 26%,#f28a00 64%,#b35200);box-shadow:0 1px 0 rgba(90,40,0,.55);animation:ballGlint 2.4s ease-in-out infinite;transition:opacity .4s ease,transform .4s ease}
+.dball svg{display:block;width:100%;height:100%}
+.dball::before{content:"";position:absolute;inset:-9px}
+.dball::after{content:"";position:absolute;top:-5px;right:-5px;width:9px;height:9px;background:#fff;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:sparkle 2.4s ease-in-out infinite;pointer-events:none}
+.dball:focus-visible{outline:1px solid #fff;outline-offset:3px}
+.dball.held{z-index:5;cursor:default;animation:none;transition:opacity .4s ease,transform .4s ease}
+.dball.held::after{animation:none;transform:scale(1)}
+.dball.gone{opacity:0;transform:translateY(-26px) scale(.5)}
+.db-stars{fill:#d4181f}
+.db-shine{fill:#fff;opacity:.7}
+
+/* Life in the sky */
+.sky-life{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.flyby{position:absolute;left:0;animation:flyAcross 16s linear forwards}
+.flyby.rtl svg{transform:scaleX(-1)}
+.birds svg{display:block;width:44px;height:18px;overflow:visible}
+.bird{fill:none;stroke:#4a3428;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transform-box:fill-box;transform-origin:center;animation:flap .32s ease-in-out infinite alternate}
+.bird.b2{animation-delay:-.12s}.bird.b3{animation-delay:-.22s}
+body[data-scene="namek"] .bird{stroke:#2c5a47}
+body[data-scene="kamehouse"] .bird{stroke:#fff}
+.nimbus svg{display:block;width:62px;height:25px;overflow:visible}
+.nimbus-body{animation:bob .5s ease-in-out infinite alternate}
+.nimbus-cloud{fill:#ffd84a;stroke:#d39400;stroke-width:1.4;stroke-linejoin:round}
+.nimbus-trail{fill:none;stroke:#fff6c4;stroke-width:1.8;stroke-linecap:round}
+.flyby.shoot{--rot:14deg;width:54px;height:2px;border-radius:1px;background:linear-gradient(90deg,rgba(255,255,255,0),#fff);animation:shootingStar 1.1s ease-in forwards}
+.flyby.shoot.rtl{--rot:-14deg;background:linear-gradient(270deg,rgba(255,255,255,0),#fff)}
+
+/* Shenron: the sky goes dark, a beam rises from the seven balls and the dragon appears */
+.summon{position:absolute;inset:0;z-index:1;cursor:default}
+.summon-sky{position:absolute;inset:0;background:linear-gradient(#02060b,#0a1a1d 72%,#1c1a11);opacity:0;animation:fadeIn .8s ease forwards}
+.summon-beam{position:absolute;left:50%;bottom:var(--ground,11%);width:24px;height:100%;margin-left:-12px;transform-origin:50% 100%;background:linear-gradient(to top,rgba(255,250,214,.95),rgba(196,255,150,.5) 45%,rgba(196,255,150,0));filter:blur(2px);transform:scaleY(0);animation:beamUp 3.2s .5s ease-out forwards}
+.summon .shenron{position:absolute;left:0;top:3%;width:100%;height:82%;filter:drop-shadow(0 0 2px rgba(200,255,130,.8)) drop-shadow(0 0 10px rgba(120,230,80,.35));transition:opacity .8s ease 1s}
+.sr-reveal{fill:none;stroke:#fff;stroke-width:52;stroke-linecap:round;stroke-dasharray:1 1;stroke-dashoffset:1;animation:srDraw 1.8s 1s ease-in-out forwards}
+.sr-head{opacity:0;animation:fadeIn .5s 2.5s ease forwards}
+.sr-edge,.sr-body,.sr-belly,.sr-scales{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sr-edge{stroke:#103a17;stroke-width:14.5}
+.sr-body{stroke:#3f9a3c;stroke-width:12}
+.sr-belly{stroke:#d9d58e;stroke-width:4}
+.sr-scales{stroke:#225f26;stroke-width:12;stroke-dasharray:1.6 4.6;opacity:.8}
+.sr-spikes{fill:#1f5a22;stroke:#103a17;stroke-width:.8;stroke-linejoin:round}
+.sr-arm path{fill:none;stroke:#3f9a3c;stroke-width:4;stroke-linecap:round}
+.sr-arm .sr-claw{stroke:#e6dca0;stroke-width:1.6}
+.sr-skull{fill:#3f9a3c;stroke:#103a17;stroke-width:1.2;stroke-linejoin:round}
+.sr-jaw{fill:#d9d58e;stroke:#103a17;stroke-width:1.1;stroke-linejoin:round}
+.sr-mouth{fill:#5a0f12}
+.sr-teeth{fill:#fff8e0}
+.sr-cheek{fill:none;stroke:#103a17;stroke-width:1}
+.sr-brow{fill:#1f5a22}
+.sr-eye{fill:#ff3b26}
+.sr-nostril{fill:#103a17}
+.sr-horn{fill:none;stroke:#e6dca0;stroke-width:2.4;stroke-linecap:round}
+.sr-horn.back{stroke:#b5ab72;stroke-width:2.1}
+.sr-mane{fill:#2a6f2c;stroke:#103a17;stroke-width:.9;stroke-linejoin:round}
+.sr-whisker{fill:none;stroke:#e6dca0;stroke-width:1.1;stroke-linecap:round}
+.summon-balls{position:absolute;left:50%;bottom:var(--ground,11%);width:0;height:0}
+.sr-ball{position:absolute;left:-6px;bottom:-2px;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 36% 30%,#fff3c0 0 8%,#ffc23d 28%,#f28a00 66%,#b35200);box-shadow:0 0 6px 2px rgba(255,190,60,.75);animation:ballPulse .9s ease-in-out infinite alternate;transition:transform 1.3s cubic-bezier(.2,.7,.3,1) 1.5s,opacity 1.3s ease 1.5s}
+.sr-ball svg{display:block;width:100%;height:100%}
+.sr-ball:nth-child(1){transform:translate(-14px,-7px)}.sr-ball:nth-child(2){transform:translate(0,-8px)}.sr-ball:nth-child(3){transform:translate(14px,-7px)}
+.sr-ball:nth-child(4){transform:translate(-21px,1px)}.sr-ball:nth-child(5){transform:translate(-7px,2px)}.sr-ball:nth-child(6){transform:translate(7px,2px)}.sr-ball:nth-child(7){transform:translate(21px,1px)}
+.summon.leaving .shenron{opacity:0}
+.summon.leaving .sr-ball{opacity:0}
+.summon.leaving .sr-ball:nth-child(1){transform:translate(-48vw,-80vh)}.summon.leaving .sr-ball:nth-child(2){transform:translate(-6vw,-95vh)}.summon.leaving .sr-ball:nth-child(3){transform:translate(40vw,-85vh)}
+.summon.leaving .sr-ball:nth-child(4){transform:translate(-60vw,-30vh)}.summon.leaving .sr-ball:nth-child(5){transform:translate(-26vw,-60vh)}.summon.leaving .sr-ball:nth-child(6){transform:translate(24vw,-65vh)}.summon.leaving .sr-ball:nth-child(7){transform:translate(60vw,-35vh)}
+.summon.leaving .summon-sky{animation:fadeOut .9s 2.4s ease both}
+.wish{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:0 8px 9%;cursor:default;animation:fadeIn .4s ease both;opacity:0;pointer-events:none}
+.wish[hidden]{display:none}
+.wish>*{pointer-events:auto}
+.wish p{margin:0;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.55);border-radius:10px}
+.wish p[hidden],.wish-options[hidden]{display:none}
+.wish-options{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.wish button{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:116px;padding:5px 10px 4px;border:2px solid var(--ink);border-radius:8px;background:#fff;color:var(--ink);transition:transform .12s ease,background .12s ease}
+.wish button:hover:not(:disabled){transform:translateY(-2px);background:#fff4dc}
+.wish button:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.wish button:disabled{opacity:.65;cursor:default}
+.wish strong{font-size:12px}
+.wish small{font-size:10px;color:#6b5844}
+.warp{position:absolute;inset:0;z-index:7;pointer-events:none;background:#fff;opacity:0}
+.warp.on{animation:warp 1s ease-out}
 
 /* Super Saiyan forms: aura colour per form, lightning for SSJ2, transformation burst */
 body{--aura:#d8f2ff;--aura-glow:#79c6ff}body.form-ssj,body.form-ssj2{--aura:#ffd23f;--aura-glow:#ffb300}
@@ -170,11 +262,25 @@ body[data-reaction="transform"] .fighter::before{opacity:1;animation:auraBurst 4
 @keyframes powerFlash{0%,35%{opacity:0}42%{opacity:1}100%{opacity:0}}
 @keyframes stageQuake{0%,100%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}75%{transform:translate(2px,-1px)}}
 @keyframes powerUp{0%{transform:translateY(0) scale(1)}30%{transform:translateY(4px) scale(.94,1.04)}40%{transform:translateY(-10px) scale(1.12)}55%,100%{transform:translateY(0) scale(1)}}
+@keyframes cheer{from{transform:translateY(0)}to{transform:translateY(-3px) scale(.98,1.03)}}
+@keyframes kata{0%{transform:translateX(0) rotate(0)}60%{transform:translateX(4px) rotate(7deg)}100%{transform:translateX(5px) rotate(9deg)}}
+@keyframes ballGlint{0%,100%{filter:none}50%{filter:brightness(1.15) drop-shadow(0 0 4px rgba(255,200,80,.9))}}
+@keyframes sparkle{0%,55%,100%{transform:scale(0) rotate(0)}72%{transform:scale(1) rotate(45deg)}}
+@keyframes ballPop{0%{transform:scale(1)}35%{transform:scale(1.7)}100%{transform:scale(1)}}
+@keyframes ballPulse{from{filter:brightness(1)}to{filter:brightness(1.3)}}
+@keyframes flyAcross{from{transform:translateX(var(--from))}to{transform:translateX(var(--to))}}
+@keyframes flap{to{transform:scaleY(-.55)}}
+@keyframes bob{to{transform:translateY(-3px)}}
+@keyframes shootingStar{0%{transform:translate(var(--from),0) rotate(var(--rot));opacity:0}15%{opacity:1}100%{transform:translate(var(--to),46px) rotate(var(--rot));opacity:0}}
+@keyframes fadeIn{to{opacity:1}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+@keyframes beamUp{0%{transform:scaleY(0);opacity:1}18%{transform:scaleY(1);opacity:1}70%{opacity:.9}100%{transform:scaleY(1);opacity:0}}
+@keyframes srDraw{to{stroke-dashoffset:0}}
+@keyframes warp{0%{opacity:0}30%{opacity:.95}100%{opacity:0}}
 @keyframes auraBurst{0%{transform:scale(.6);opacity:.2}40%{transform:scale(1.6);opacity:1}100%{transform:scale(1);opacity:.75}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 /* Explorer arena view: just the stage, filling the view */
 body.arena-view .stage{height:100vh;min-height:110px;border-radius:0}
-body.arena-view .speech{top:6px;right:6px}
 /* First run: pick one fighter (the second one can be added later) */
 .chooser{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(10,12,20,.45);cursor:default}
 .chooser[hidden]{display:none}

@@ -1,8 +1,8 @@
 {
   "name": "dbz-companions-local",
   "displayName": "DBZ Companions — Visual Fan Prototype",
-  "description": "Unofficial local fan prototype with illustrated Goku and Vegeta, animated training and VS Code reactions.",
-  "version": "0.8.0",
+  "description": "Unofficial local fan prototype: Goku and Vegeta live in a VS Code arena, level up into Super Saiyan forms while you code, hunt Dragon Balls and train in the Time Chamber.",
+  "version": "0.9.0",
   "publisher": "local-prototype",
   "private": true,
   "license": "UNLICENSED",
@@ -39,6 +39,16 @@
         "command": "dbzCompanions.kiBlast",
         "title": "DBZ Companions: Ki Blast!",
         "icon": "$(zap)"
+      },
+      {
+        "command": "dbzCompanions.enterChamber",
+        "title": "DBZ Companions: Enter the Hyperbolic Time Chamber (Focus Session)",
+        "icon": "$(watch)"
+      },
+      {
+        "command": "dbzCompanions.leaveChamber",
+        "title": "DBZ Companions: Leave the Hyperbolic Time Chamber",
+        "icon": "$(debug-stop)"
       },
       {
         "command": "dbzCompanions.changeBackground",
@@ -143,6 +153,16 @@
             "Wasteland at night"
           ],
           "description": "Arena background."
+        },
+        "dbzCompanions.dragonBalls": {
+          "type": "boolean",
+          "default": true,
+          "description": "Typing code uncovers Dragon Balls in the arena. Collect all seven and Shenron grants a wish."
+        },
+        "dbzCompanions.showHud": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the scouter (power level, level and form) and the Dragon Ball tracker on the arena."
         }
       }
     },
@@ -164,9 +184,19 @@
           "group": "navigation@2"
         },
         {
+          "command": "dbzCompanions.enterChamber",
+          "when": "(view == dbzCompanions.arena || view == dbzCompanions.arenaPanel) && !dbzCompanions.inChamber",
+          "group": "navigation@3"
+        },
+        {
+          "command": "dbzCompanions.leaveChamber",
+          "when": "(view == dbzCompanions.arena || view == dbzCompanions.arenaPanel) && dbzCompanions.inChamber",
+          "group": "navigation@3"
+        },
+        {
           "command": "dbzCompanions.changeBackground",
           "when": "view == dbzCompanions.arena || view == dbzCompanions.arenaPanel",
-          "group": "navigation@3"
+          "group": "navigation@4"
         },
         {
           "command": "dbzCompanions.chooseFighter",
@@ -178,11 +208,17 @@
           "when": "view == dbzCompanions.arena || view == dbzCompanions.arenaPanel",
           "group": "fighters@2"
         }
+      ],
+      "commandPalette": [
+        {
+          "command": "dbzCompanions.leaveChamber",
+          "when": "dbzCompanions.inChamber"
+        }
       ]
     }
   },
   "scripts": {
-    "check": "node --check extension.js && node --check media/app.js && node --check media/arena.js && node --check media/arena-view.js"
+    "check": "node --check extension.js && node --check media/app.js && node --check media/arena.js && node --check media/world.js && node --check media/shenron.js && node --check media/arena-view.js"
   },
   "files": [
     "extension.js",
