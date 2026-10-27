@@ -1,4 +1,4 @@
-"""Make Super Saiyan style hair-colour variants of a sprite, plus small head icons.
+"""Make Super Saiyan style hair-colour variants of a sprite, plus small editor sprites.
 
 Run tools/defringe.py on the raw cutout first.
 Usage: python3 tools/make-forms.py media/art/goku.png <out_dir> goku
@@ -31,14 +31,11 @@ FORMS = {
     'god':  ((150, 10, 45), (255, 95, 100)),
     'blue': ((0, 85, 190), (125, 230, 255)),
 }
-# Head icon: top part of the sprite, cropped to its content.
-def head(im_pil):
+# Small sprite for the editor companions (media/art/mini), 112px tall.
+def mini(im_pil):
     w, hh = im_pil.size
-    crop = im_pil.crop((0, 0, w, int(hh * 0.62)))
-    crop = crop.crop(crop.getbbox())
-    crop.thumbnail((64, 64), Image.LANCZOS)
-    return crop
-head(img).save(f'{out_dir}/{name}-base-head.png', optimize=True)
+    return im_pil.resize((round(w * 112 / hh), 112), Image.LANCZOS)
+mini(img).save(f'{out_dir}/{name}-base-mini.png', optimize=True)
 t = (np.clip(lum / 120.0, 0, 1) ** 0.8)[..., None]
 for form, (c0, c1) in FORMS.items():
     o = im.copy()
@@ -46,4 +43,4 @@ for form, (c0, c1) in FORMS.items():
     o[..., :3][hair] = col[hair]
     out = Image.fromarray(o.clip(0, 255).astype(np.uint8))
     out.save(f'{out_dir}/{name}-{form}.png', optimize=True)
-    head(out).save(f'{out_dir}/{name}-{form}-head.png', optimize=True)
+    mini(out).save(f'{out_dir}/{name}-{form}-mini.png', optimize=True)

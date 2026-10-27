@@ -1,6 +1,7 @@
 'use strict';
 const vscode = require('vscode');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 
 const INITIAL = Object.freeze({
@@ -24,6 +25,8 @@ const FORMS = [
   {id:'god',  name:'Super Saiyan God',  level:20, art:'god'},
   {id:'blue', name:'Super Saiyan Blue', level:30, art:'blue'}
 ];
+const BUDDY_HEIGHT = 56;
+const BUDDY_WIDTH = {goku:46, vegeta:32}; // Matches the aspect ratio of media/art/mini sprites.
 const FIGHTER_NAMES = {both:'Goku & Vegeta', goku:'Goku', vegeta:'Vegeta'};
 
 function clamp(v, lo=0, hi=100) { return Math.max(lo, Math.min(hi, v)); }
@@ -58,6 +61,7 @@ class CompanionProvider {
     this.errorCounts = new Map();
     this.typedChars = 0;
     this.buddyTypes = new Map();
+    this.hopUntil = 0;
     this.status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     this.status.command = 'dbzCompanions.show';
     this.status.show();
@@ -82,13 +86,24 @@ class CompanionProvider {
     this.status.tooltip = `${FIGHTER_NAMES[this.state.fighter]}: level ${level}, ${form.name}` +
       (next ? `\n${next.name} at level ${next.level}` : '\nMaximum power reached!');
   }
-  // A tiny head icon of each fighter rides along at the end of the line you are editing.
-  buddyType(fighter, art) {
-    const key = `${fighter}-${art}`;
+  // The fighters stand next to the line you are editing. VS Code has no API for
+  // drawing images in the editor at a chosen size, so (like Power Mode) the sprite
+  // is injected through the decoration's CSS as an absolutely positioned background.
+  buddyType(fighter, art, place, offset, gapCh) {
+    const key = `${fighter}-${art}-${place}-${offset}-${gapCh}`;
     if (!this.buddyTypes.has(key)) {
-      const icon = vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'art', 'heads', `${key}.png`));
+      const file = path.join(this.context.extensionPath, 'media', 'art', 'mini', `${fighter}-${art}.png`);
+      const data = fs.readFileSync(file).toString('base64');
+      const width = BUDDY_WIDTH[fighter];
+      const top = {stand:`calc(100% - ${BUDDY_HEIGHT}px)`, hop:`calc(100% - ${BUDDY_HEIGHT + 8}px)`, below:'100%'}[place];
+      const css = [
+        'none', 'position:absolute', 'display:inline-block', `top:${top}`,
+        `margin-left:calc(${gapCh}ch + ${offset}px)`, `width:${width}px`, `height:${BUDDY_HEIGHT}px`,
+        `background:url(data:image/png;base64,${data}) no-repeat center bottom / contain`,
+        'pointer-events:none', 'z-index:5'
+      ].join(';');
       this.buddyTypes.set(key, vscode.window.createTextEditorDecorationType({
-        after: {contentIconPath: icon, width: '18px', height: '16px', margin: '0 0 0 1.2em'},
+        after: {contentText: '\u200b', textDecoration: css},
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
       }));
     }
@@ -98,19 +113,42 @@ class CompanionProvider {
     const enabled = vscode.workspace.getConfiguration('dbzCompanions').get('editorBuddy', true);
     const art = formFor(levelFor(this.state.xp)).art;
     const fighters = this.state.fighter === 'both' ? ['goku','vegeta'] : [this.state.fighter];
-    const wanted = new Set(enabled && editor ? fighters.map(f => `${f}-${art}`) : []);
+    const wanted = new Map();
+    if (enabled && editor) {
+      const line = editor.selection.active.line;
+      // Near the top of the file there is no room above the line, so hang below it.
+      const place = line < 3 ? 'below' : Date.now() < this.hopUntil ? 'hop' : 'stand';
+      // Stand clear of the text on the neighbouring lines the sprites overlap.
+      const doc = editor.document, tab = Number(editor.options?.tabSize) || 4;
+      const width = n => doc.lineAt(n).text.replace(/\t/g, ' '.repeat(tab)).length;
+      const near = place === 'below' ? [line + 1, line + 2, line + 3] : [line - 1, line - 2];
+      const longest = Math.max(0, ...near.filter(n => n >= 0 && n < doc.lineCount).map(width));
+      const gapCh = 3 + Math.ceil(Math.max(0, longest - width(line)) / 4) * 4;
+      let offset = 0;
+      for (const f of fighters) {
+        wanted.set(this.buddyType(f, art, place, offset, gapCh), f);
+        offset += BUDDY_WIDTH[f] + 4;
+      }
+    }
     for (const ed of vscode.window.visibleTextEditors) {
-      for (const [key, type] of this.buddyTypes) {
-        if (ed !== editor || !wanted.has(key)) ed.setDecorations(type, []);
+      for (const type of this.buddyTypes.values()) {
+        if (ed !== editor || !wanted.has(type)) ed.setDecorations(type, []);
       }
     }
     if (!wanted.size) return;
-    const line = editor.document.lineAt(editor.selection.active.line).range.end;
-    for (const f of fighters) editor.setDecorations(this.buddyType(f, art), [new vscode.Range(line, line)]);
+    const end = editor.document.lineAt(editor.selection.active.line).range.end;
+    for (const type of wanted.keys()) editor.setDecorations(type, [new vscode.Range(end, end)]);
+  }
+  hop() {
+    if (Date.now() < this.hopUntil) return;
+    this.hopUntil = Date.now() + 140;
+    this.updateBuddy();
+    setTimeout(() => this.updateBuddy(), 150);
   }
   async onTextChange(event) {
     const editor = vscode.window.activeTextEditor;
     if (!editor || event.document !== editor.document) return;
+    if (event.contentChanges.length) this.hop();
     for (const change of event.contentChanges) this.typedChars += Math.min(change.text.length, MAX_CHARS_PER_CHANGE);
     if (this.typedChars < CHARS_PER_XP) return;
     const xp = Math.floor(this.typedChars / CHARS_PER_XP);
@@ -326,6 +364,10 @@ function activate(context) {
     vscode.window.registerWebviewViewProvider('dbzCompanions.view',{resolveWebviewView:v=>provider.bind(v)},{webviewOptions:{retainContextWhenHidden:true}}),
     vscode.commands.registerCommand('dbzCompanions.show',()=>vscode.commands.executeCommand('workbench.view.extension.dbzCompanions')),
     vscode.commands.registerCommand('dbzCompanions.openBeside',()=>provider.openBeside()),
+    vscode.commands.registerCommand('dbzCompanions.toggleEditorBuddy',()=>{
+      const config=vscode.workspace.getConfiguration('dbzCompanions');
+      return config.update('editorBuddy',!config.get('editorBuddy',true),vscode.ConfigurationTarget.Global);
+    }),
     vscode.workspace.onWillSaveTextDocument(e=>provider.onWillSave(e)),
     vscode.workspace.onDidSaveTextDocument(d=>provider.onDidSave(d)),
     vscode.languages.onDidChangeDiagnostics(e=>provider.onDiagnostics(e))

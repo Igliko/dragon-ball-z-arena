@@ -2,7 +2,7 @@
   "name": "dbz-companions-local",
   "displayName": "DBZ Companions — Visual Fan Prototype",
   "description": "Unofficial local fan prototype with illustrated Goku and Vegeta, animated training and VS Code reactions.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "local-prototype",
   "private": true,
   "license": "UNLICENSED",
@@ -13,7 +13,8 @@
   "contributes": {
     "commands": [
       {"command": "dbzCompanions.show", "title": "DBZ Companions: Show Companion"},
-      {"command": "dbzCompanions.openBeside", "title": "DBZ Companions: Open Large Preview"}
+      {"command": "dbzCompanions.openBeside", "title": "DBZ Companions: Open Large Preview"},
+      {"command": "dbzCompanions.toggleEditorBuddy", "title": "DBZ Companions: Toggle Fighters in Editor"}
     ],
     "viewsContainers": {"activitybar": [
       {"id": "dbzCompanions", "title": "DBZ Companions", "icon": "assets/icon.svg"}
@@ -26,7 +27,7 @@
       "properties": {
         "dbzCompanions.reactToSaves": {"type": "boolean", "default": true, "description": "Celebrate when you save a file."},
         "dbzCompanions.reactToErrors": {"type": "boolean", "default": true, "description": "React when a new code error appears in the active file."},
-        "dbzCompanions.editorBuddy": {"type": "boolean", "default": true, "description": "Show tiny fighters at the end of the line you are editing."}
+        "dbzCompanions.editorBuddy": {"type": "boolean", "default": true, "description": "Show the fighters standing next to the line you are editing."}
       }
     }
   },
