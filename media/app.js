@@ -22,6 +22,7 @@
   const fighterName=()=>({both:'Goku & Vegeta',goku:'Goku',vegeta:'Vegeta'})[state.fighter]||'Goku & Vegeta';
   let art={};
   try{art=JSON.parse(document.body.dataset.art||'{}');}catch{art={};}
+  const arena=window.DBZArena($('#stage'),{art,heightRatio:.5,maxHeight:100,groundRatio:.11,onFeed:()=>localAction('feed',false)});
   // Shown in the speech bubble only when the fighters need something.
   function idleLabel(){
     if(state.hunger>=80) return 'So hungry... feed us!';
@@ -32,11 +33,7 @@
   // Power level as a scouter would read it: 416 at level 1, over 9000 at level 20.
   const powerFor=level=>Math.round(416*Math.pow(1.18,level-1));
   function render(){
-    document.body.classList.toggle('tiny',state.tiny);
     document.body.classList.toggle('no-particles',!state.particles);
-    document.body.classList.toggle('single-goku',state.fighter==='goku');
-    document.body.classList.toggle('single-vegeta',state.fighter==='vegeta');
-    document.body.classList.toggle('training',state.training && state.fighter==='both' && document.body.dataset.reaction!=='rest');
     $$('.picker').forEach(b=>{b.classList.toggle('selected',b.dataset.fighter===state.fighter);b.setAttribute('aria-pressed',String(b.dataset.fighter===state.fighter));});
     for(const id of ['mood','energy','hunger']){
       const value=Math.max(0,Math.min(100,Math.round(state[id])));
@@ -46,10 +43,8 @@
     const level=levelFor(state.xp);$('#level').textContent=String(level).padStart(2,'0');
     const form=formFor(level),next=FORMS.find(f=>f.level>level);
     for(const f of FORMS) document.body.classList.toggle('form-'+f.id,f===form);
-    for(const fighter of ['goku','vegeta']){
-      const src=art[fighter]&&art[fighter][form.art];
-      if(src) $$(`.fighter-${fighter} img, .picker [data-art="${fighter}"]`).forEach(img=>{if(img.getAttribute('src')!==src)img.setAttribute('src',src);});
-    }
+    arena.setLook({fighters:state.fighter==='both'?['goku','vegeta']:[state.fighter],form:form.art,maxHeight:state.tiny?82:100});
+    arena.setMood({energy:state.energy,hunger:state.hunger,training:state.training});
     $('#formText').textContent=form.name;
     $('#nextFormText').textContent=next?`Next: ${next.name} at Lv ${next.level}`:'Maximum power!';
     $('#xpText').textContent=`${state.xp%50} / 50 XP`;$('#xpFill').style.width=(state.xp%50)*2+'%';
@@ -61,11 +56,9 @@
       const f=FORMS.find(x=>x.id===li.dataset.form);
       li.classList.toggle('reached',level>=f.level);li.classList.toggle('current',f===form);
     });
-    if(!document.body.dataset.reaction || document.body.dataset.reaction==='idle'){
-      const need=idleLabel();
-      document.body.classList.toggle('needs',!!need);
-      if(need) $('#sceneLabel').textContent=need;
-    }
+    const need=idleLabel();
+    document.body.classList.toggle('needs',!!need);
+    if(need) $('#sceneLabel').textContent=need;
     api.setState(state);
   }
   function selected(tab){
@@ -84,7 +77,8 @@
     lastLevel=level;
   }
   const reactions={transform:'Transformation!',levelup:'Level up!',save:'Saved! Nice work.',error:'Hm, an error to fix.',feed:'Thanks for the food!',play:'That was fun!',rest:'Power nap...',train:'Hyaaa!'};
-  function react(kind,customLabel){
+  function react(kind,customLabel,animate=true){
+    if(animate)arena.react(kind);
     const label=customLabel||reactions[kind]||'';
     clearTimeout(reactionTimeout);
     document.body.classList.remove('reacting');document.body.dataset.reaction='idle';
@@ -92,8 +86,7 @@
     void document.body.offsetWidth;
     document.body.dataset.reaction=kind;
     document.body.classList.add('reacting');
-    document.body.classList.remove('needs');
-    $('#sceneLabel').textContent=label;$('#eventNote').textContent=label;
+    $('#eventNote').textContent=label;
     render();
     reactionTimeout=setTimeout(()=>{
       document.body.classList.remove('reacting'); document.body.dataset.reaction='idle';
@@ -101,12 +94,13 @@
     },kind==='rest'?6000:kind==='transform'?4500:2700);
   }
   const clamp=n=>Math.max(0,Math.min(100,n));
-  function localAction(kind){
+  // animate=false when the arena already showed it (a senzu bean clicked onto the stage).
+  function localAction(kind,animate=true){
     if(kind==='feed'){state.hunger=clamp(state.hunger-24);state.mood=clamp(state.mood+4);}
     if(kind==='play'){state.mood=clamp(state.mood+14);state.energy=clamp(state.energy-7);state.xp+=5;}
     if(kind==='rest'){state.energy=clamp(state.energy+20);state.mood=clamp(state.mood+3);}
     if(kind==='train'){state.energy=clamp(state.energy-5);state.xp+=4;}
-    render(); react(kind);checkProgress();api.postMessage({type:'action',action:kind});
+    render(); react(kind,undefined,animate);checkProgress();api.postMessage({type:'action',action:kind});
   }
   $$('.nav-item').forEach(b=>b.addEventListener('click',()=>selected(b.dataset.tab)));
   $$('.picker').forEach(b=>b.addEventListener('click',()=>{state.fighter=b.dataset.fighter;render();api.postMessage({type:'set',key:'fighter',value:state.fighter});}));
@@ -116,6 +110,8 @@
     const m=event.data; if(!m||typeof m!=='object') return;
     if(m.type==='state'&&m.state&&typeof m.state==='object'){state={...defaults,...m.state};render();checkProgress();}
     if(m.type==='reaction'&&reactions[m.reaction])react(m.reaction);
+    if(m.type==='arena'&&m.action==='senzu')arena.dropBean(null,true);
+    if(m.type==='arena'&&m.action==='blast')arena.react('blast');
   });
   render();selected('characters');api.postMessage({type:'ready'});
 })();

@@ -1,4 +1,4 @@
-# DBZ Companions — Visual Fan Prototype (0.4.1)
+# DBZ Companions — Visual Fan Prototype (0.5.0)
 
 Local, unofficial VS Code extension prototype featuring detailed **illustrated 2.5D cutouts of Goku and Vegeta** (derived from the concept art made in this chat). The sprites are **not actual 3D models**, do not rotate in 3D, and are animated through CSS translations, movement, bobbing and reactions. This version prioritizes looking similar to the requested character style rather than the primitive 3D shapes in version 0.1.
 
@@ -6,13 +6,15 @@ Local, unofficial VS Code extension prototype featuring detailed **illustrated 2
 
 1. Open VS Code -> Extensions (the squares icon in the Activity Bar).
 2. Click the `...` menu -> `Install from VSIX...`.
-3. Choose `dbz-companions-local-0.4.1.vsix`. This upgrades the older `dbz-companions-local` extension.
+3. Choose `dbz-companions-local-0.5.0.vsix`. This upgrades the older `dbz-companions-local` extension.
    After upgrading, run `Developer: Reload Window` (`Ctrl+Shift+P`) so the new version is loaded.
 4. Click the `DBZ Companions` icon in the left Activity Bar to open the view. If missing, open Command Palette `Ctrl+Shift+P` and run `DBZ Companions: Show Companion`.
 5. To see a larger panel, run `DBZ Companions: Open Large Preview`.
 
 ## Features
 
+- **They live on their own, like vscode-pets.** Goku and Vegeta walk, run, jump, fly, meditate, nap, power up, spar with each other and fire Kamehameha / Galick Gun blasts. Click a fighter to poke them; click the ground to drop a senzu bean and they race to eat it (it feeds them).
+- **DBZ Arena in the Explorer.** A small arena view sits in the Explorer sidebar, so the fighters are on screen while you browse and edit files. Its title bar has *Throw Senzu Bean* and *Ki Blast!* buttons. Drag it to the bottom panel if you prefer.
 - **Super Saiyan forms.** Level up and your fighters transform, with a flash and an aura:
   - Level 5: Super Saiyan (golden hair)
   - Level 10: Super Saiyan 2 (golden hair with lightning)

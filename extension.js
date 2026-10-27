@@ -55,6 +55,7 @@ class CompanionProvider {
     this.context = context;
     this.state = saneState(context.globalState.get('visualPetState'));
     this.webviews = new Set();
+    this.arenaViews = new Set();
     this.lastErrorAt = 0;
     this.lastSaveXpAt = 0;
     this.manualSaves = new Set();
@@ -109,7 +110,14 @@ class CompanionProvider {
     }
     return this.buddyTypes.get(key);
   }
-  updateBuddy(editor=vscode.window.activeTextEditor) {
+  // Focusing a webview, the terminal or the panel leaves no active text editor;
+  // keep the fighters on the last editor while it is still on screen.
+  buddyEditor() {
+    const active = vscode.window.activeTextEditor;
+    if (active) return (this.lastEditor = active);
+    return vscode.window.visibleTextEditors.includes(this.lastEditor) ? this.lastEditor : undefined;
+  }
+  updateBuddy(editor=this.buddyEditor()) {
     const enabled = vscode.workspace.getConfiguration('dbzCompanions').get('editorBuddy', true);
     const art = formFor(levelFor(this.state.xp)).art;
     const fighters = this.state.fighter === 'both' ? ['goku','vegeta'] : [this.state.fighter];
@@ -146,7 +154,7 @@ class CompanionProvider {
     setTimeout(() => this.updateBuddy(), 150);
   }
   async onTextChange(event) {
-    const editor = vscode.window.activeTextEditor;
+    const editor = this.buddyEditor();
     if (!editor || event.document !== editor.document) return;
     if (event.contentChanges.length) this.hop();
     for (const change of event.contentChanges) this.typedChars += Math.min(change.text.length, MAX_CHARS_PER_CHANGE);
@@ -169,6 +177,19 @@ class CompanionProvider {
     view.webview.html = this.html(view.webview);
     const listener = this.register(view.webview);
     view.onDidDispose(() => {this.webviews.delete(view.webview); listener.dispose();});
+  }
+  bindArena(view) {
+    view.webview.options = {enableScripts:true, localResourceRoots:[vscode.Uri.file(path.join(this.context.extensionPath,'media'))]};
+    view.webview.html = this.html(view.webview, arenaDocument);
+    this.arenaViews.add(view);
+    const listener = this.register(view.webview);
+    view.onDidDispose(() => {this.webviews.delete(view.webview); this.arenaViews.delete(view); listener.dispose();});
+  }
+  // Senzu beans feed the fighters, so drop them in one place only: the Explorer arena if it is showing.
+  throwSenzu() {
+    const arena = [...this.arenaViews].find(v => v.visible);
+    if (arena) arena.webview.postMessage({type:'arena',action:'senzu'});
+    else this.broadcast({type:'arena',action:'senzu'});
   }
   openBeside() {
     const panel=vscode.window.createWebviewPanel('dbzCompanions.large','DBZ Companions — Preview',vscode.ViewColumn.Beside,{
@@ -237,7 +258,7 @@ class CompanionProvider {
     this.broadcast({type:'state',state:this.state});
   }
   broadcast(message, except) {for(const w of this.webviews) if (w!==except) w.postMessage(message).then(undefined,()=>{});}
-  html(webview) {
+  html(webview, render=htmlDocument) {
     const nonce=crypto.randomBytes(16).toString('base64');
     const folder=vscode.Uri.file(path.join(this.context.extensionPath,'media'));
     const url=(p)=>webview.asWebviewUri(vscode.Uri.joinPath(folder,p)).toString();
@@ -247,7 +268,7 @@ class CompanionProvider {
       art[f]={base:url(`art/${f}.png`)};
       for (const form of ['ssj','god','blue']) art[f][form]=url(`art/${f}-${form}.png`);
     }
-    return htmlDocument({style:url('style.css'),script:url('app.js'),goku:art.goku.base,vegeta:art.vegeta.base,art:JSON.stringify(art),nonce,csp});
+    return render({style:url('style.css'),script:url('app.js'),arenaView:url('arena-view.js'),arena:url('arena.js'),art:JSON.stringify(art),nonce,csp});
   }
 }
 // Flat late-afternoon wasteland, drawn to sit behind the fighters.
@@ -273,6 +294,20 @@ const ICONS = {
   train: '<path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z"/>'
 };
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
+function arenaDocument(a) {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" />
+    <title>DBZ Arena</title></head>
+<body class="arena-view" data-art='${a.art}'>
+  <div class="stage" id="stage" title="Click the ground to drop a senzu bean">
+    ${SCENE_SVG}
+    <div class="power-flash" aria-hidden="true"></div>
+    <span class="speech" id="sceneLabel" aria-live="polite"></span>
+  </div>
+  <script nonce="${a.nonce}" src="${a.arena}"></script>
+  <script nonce="${a.nonce}" src="${a.arenaView}"></script>
+</body></html>`;
+}
 function htmlDocument(a) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" />
@@ -289,8 +324,6 @@ function htmlDocument(a) {
         <div class="stage" id="stage">
           ${SCENE_SVG}
           <div class="scouter" aria-label="Power level">PWR<b id="powerNum">416</b></div>
-          <div class="fighter fighter-goku" id="goku"><div class="fighter-pose"><img draggable="false" alt="Goku" src="${a.goku}"/></div><span class="fighter-shadow"></span></div>
-          <div class="fighter fighter-vegeta" id="vegeta"><div class="fighter-pose"><img draggable="false" alt="Vegeta" src="${a.vegeta}"/></div><span class="fighter-shadow"></span></div>
           <div class="power-flash" aria-hidden="true"></div>
           <span class="speech" id="sceneLabel" aria-live="polite"></span>
         </div>
@@ -342,6 +375,7 @@ function htmlDocument(a) {
       </section>
     </main>
   </div>
+  <script nonce="${a.nonce}" src="${a.arena}"></script>
   <script nonce="${a.nonce}" src="${a.script}"></script>
 </body></html>`;
 }
@@ -358,9 +392,13 @@ function activate(context) {
     {dispose:()=>clearInterval(timer)},
     provider,
     vscode.workspace.onDidChangeTextDocument(e=>provider.onTextChange(e)),
-    vscode.window.onDidChangeTextEditorSelection(e=>provider.updateBuddy(e.textEditor)),
-    vscode.window.onDidChangeActiveTextEditor(e=>provider.updateBuddy(e)),
+    vscode.window.onDidChangeTextEditorSelection(e=>{if (e.textEditor===vscode.window.activeTextEditor) provider.updateBuddy();}),
+    vscode.window.onDidChangeActiveTextEditor(()=>provider.updateBuddy()),
+    vscode.window.onDidChangeVisibleTextEditors(()=>provider.updateBuddy()),
     vscode.workspace.onDidChangeConfiguration(e=>{if (e.affectsConfiguration('dbzCompanions.editorBuddy')) provider.updateBuddy();}),
+    vscode.window.registerWebviewViewProvider('dbzCompanions.arena',{resolveWebviewView:v=>provider.bindArena(v)},{webviewOptions:{retainContextWhenHidden:true}}),
+    vscode.commands.registerCommand('dbzCompanions.throwSenzu',()=>provider.throwSenzu()),
+    vscode.commands.registerCommand('dbzCompanions.kiBlast',()=>provider.broadcast({type:'arena',action:'blast'})),
     vscode.window.registerWebviewViewProvider('dbzCompanions.view',{resolveWebviewView:v=>provider.bind(v)},{webviewOptions:{retainContextWhenHidden:true}}),
     vscode.commands.registerCommand('dbzCompanions.show',()=>vscode.commands.executeCommand('workbench.view.extension.dbzCompanions')),
     vscode.commands.registerCommand('dbzCompanions.openBeside',()=>provider.openBeside()),
@@ -374,4 +412,4 @@ function activate(context) {
   );
 }
 function deactivate(){}
-module.exports={activate,deactivate,htmlDocument,levelFor,formFor};
+module.exports={activate,deactivate,htmlDocument,arenaDocument,levelFor,formFor};

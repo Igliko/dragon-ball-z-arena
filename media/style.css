@@ -28,18 +28,8 @@ main{flex:1}
 .page.active{display:block}
 
 /* Stage */
-.stage{position:relative;height:200px;border-radius:4px;overflow:hidden;isolation:isolate;background:#6f9bd6}
+.stage{position:relative;height:200px;border-radius:4px;overflow:hidden;isolation:isolate;background:#6f9bd6;cursor:pointer;user-select:none}
 .scene{position:absolute;inset:0;width:100%;height:100%;z-index:-2}
-.fighter{position:absolute;bottom:22px;width:46%;height:138px;z-index:2;transform-origin:bottom center;transition:left .3s ease,right .3s ease,opacity .25s ease}
-.fighter-goku{left:4%}.fighter-vegeta{right:4%}
-.fighter-pose{height:100%;display:flex;align-items:flex-end;justify-content:center;animation:breathe 2.6s ease-in-out infinite}
-.fighter-vegeta .fighter-pose{animation-delay:.7s}
-.fighter-pose img{height:100%;width:auto;max-width:120%;object-fit:contain;object-position:bottom center;pointer-events:none;user-select:none}
-.fighter-shadow{position:absolute;left:22%;right:22%;bottom:-3px;height:7px;border-radius:50%;background:#3a1f0f;opacity:.35;z-index:-1}
-body.tiny .fighter{height:122px}
-body.single-goku .fighter-vegeta,body.single-vegeta .fighter-goku{opacity:0;pointer-events:none}
-body.single-goku .fighter-goku,body.single-vegeta .fighter-vegeta{left:25%;right:auto;width:50%;height:148px}
-body.tiny.single-goku .fighter-goku,body.tiny.single-vegeta .fighter-vegeta{height:132px}
 
 /* Scouter readout */
 .scouter{position:absolute;top:8px;left:8px;z-index:6;padding:3px 7px 3px 6px;font:600 10px/1.2 var(--vscode-editor-font-family,ui-monospace,monospace);letter-spacing:.06em;color:#8dffb0;background:rgba(6,40,22,.62);border:1px solid rgba(141,255,176,.45);clip-path:polygon(0 0,100% 0,100% 70%,calc(100% - 6px) 100%,0 100%)}
@@ -50,7 +40,7 @@ body.over9000 .scouter b{color:#ffd9d9}
 /* Manga speech bubble */
 .speech{position:absolute;top:10px;right:10px;max-width:62%;z-index:6;padding:5px 9px;font-size:11px;font-weight:700;line-height:1.25;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:12px;opacity:0;transform:translateY(-4px) scale(.92);transform-origin:80% 100%;transition:opacity .18s ease,transform .18s ease;pointer-events:none}
 .speech::after{content:"";position:absolute;bottom:-8px;right:22px;width:10px;height:10px;background:#fff;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:skewX(-25deg) rotate(45deg)}
-body.reacting .speech,body.needs .speech{opacity:1;transform:none}
+body.needs .speech{opacity:1;transform:none}
 
 /* Fighter picker: segmented control */
 .segmented{display:grid;grid-template-columns:repeat(3,1fr);margin:10px 0 14px;border:1px solid var(--line);border-radius:4px;overflow:hidden}
@@ -111,26 +101,44 @@ body.form-blue .form-chip{background:#2f8fea;color:#fff}
 .toggle-row strong{font-size:12px;font-weight:600}
 .toggle-row small{font-size:11px;color:var(--muted)}
 
-/* Idle and reaction animations */
-body.training .fighter-goku{animation:sparGoku 3.8s ease-in-out infinite}
-body.training .fighter-vegeta{animation:sparVegeta 3.8s ease-in-out infinite}
-body.training .fighter-pose{animation:fightBounce .55s ease-in-out infinite alternate}
-body.training .fighter-vegeta .fighter-pose{animation-delay:.26s}
-body[data-reaction="rest"] .fighter-pose{animation:sleepy 2s ease-in-out infinite!important}
-body[data-reaction="rest"] .fighter{animation:none!important}
-body[data-reaction="play"] .fighter{animation:hop .42s ease-in-out 4!important}
-body[data-reaction="save"] .fighter-pose{animation:jumpY .48s ease-in-out 3!important}
-body[data-reaction="error"] .fighter-pose{animation:shake .42s linear 3!important}
-body[data-reaction="feed"] .fighter-pose{animation:snack .7s ease-in-out 3!important}
-body[data-reaction="train"] .fighter{animation:hop .4s ease-in-out 5!important}
-body[data-reaction="levelup"] .fighter-pose{animation:jumpY .45s ease-in-out 4!important}
+/* Fighters (positioned by arena.js; CSS only animates the pose) */
+.fighter{position:absolute;left:0;bottom:22px;z-index:2;cursor:pointer;will-change:transform}
+.fighter-flip{height:100%}
+.fighter-pose{height:100%;display:flex;align-items:flex-end;justify-content:center;transform-origin:50% 100%;animation:breathe 2.6s ease-in-out infinite}
+.fighter-pose img{height:100%;width:auto;max-width:none;pointer-events:none;user-select:none}
+.fighter-shadow{position:absolute;left:18%;right:18%;bottom:-3px;height:6px;border-radius:50%;background:#3a1f0f;opacity:.35;z-index:-1;transition:opacity .15s,transform .15s}
+.fighter.airborne .fighter-shadow{opacity:.12;transform:scale(.6)}
+.is-walk .fighter-pose{animation:walkBob .38s ease-in-out infinite}
+.is-run .fighter-pose,.is-chase .fighter-pose{animation:runBob .22s ease-in-out infinite}
+.is-dash .fighter-pose{animation:none;transform:rotate(12deg) translateX(3px)}
+.is-recoil .fighter-pose{animation:none;transform:rotate(-6deg)}
+.is-spar .fighter-pose{animation:guard .5s ease-in-out infinite alternate}
+.is-fly .fighter-pose{animation:hover 1.3s ease-in-out infinite}
+.is-jump .fighter-pose{animation:none;transform:scale(.96,1.05)}
+.is-meditate .fighter-pose{animation:meditate 2.6s ease-in-out infinite}
+.is-sleep .fighter-pose{animation:sleepy 2s ease-in-out infinite}
+.is-eat .fighter-pose{animation:snack .32s ease-in-out infinite}
+.is-power .fighter-pose{animation:powerShake .07s linear infinite}
+.is-hit .fighter-pose{animation:hitFlash .12s linear 3}
+.is-blast .fighter-pose{animation:none;transform:rotate(-5deg) scale(1.03)}
+.say{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%) scale(.9);white-space:nowrap;padding:3px 7px;font-size:10px;font-weight:700;line-height:1.2;color:var(--ink);background:#fff;border:1.5px solid var(--ink);border-radius:9px;opacity:0;transition:opacity .15s,transform .15s;pointer-events:none;z-index:8}
+.say::after{content:"";position:absolute;top:100%;left:50%;width:6px;height:6px;margin:-3px 0 0 -3px;background:#fff;border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);transform:rotate(45deg)}
+.fighter.saying .say{opacity:1;transform:translateX(-50%)}
+.fighter.say-left .say{left:auto;right:0;transform:none}.fighter.say-left .say::after{left:auto;right:10px}
+.fighter.say-right .say{left:0;transform:none}.fighter.say-right .say::after{left:12px}
+.ki{position:absolute;z-index:4;width:18px;height:18px;margin:0 0 -9px -9px;border-radius:50%;pointer-events:none;transform:scale(calc(.3 + var(--charge,0)*.9));background:radial-gradient(circle,#fff 0 30%,#7fd3ff 55%,transparent 72%);box-shadow:0 0 12px 4px #58bfff}
+.ki-vegeta{background:radial-gradient(circle,#fff 0 30%,#c99bff 55%,transparent 72%);box-shadow:0 0 12px 4px #a66bff}
+.beam{position:absolute;z-index:4;height:12px;margin-bottom:-6px;border-radius:6px;pointer-events:none;background:linear-gradient(#58bfff,#e9f8ff 35%,#fff 50%,#e9f8ff 65%,#58bfff);box-shadow:0 0 10px 3px #58bfffaa;animation:beamFire .7s ease-out both}
+.beam-vegeta{background:linear-gradient(#a66bff,#f1e6ff 35%,#fff 50%,#f1e6ff 65%,#a66bff);box-shadow:0 0 10px 3px #a66bffaa}
+.senzu{position:absolute;z-index:3;width:8px;height:11px;margin-left:-4px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 35% 30%,#c6f28a,#5fa52c 70%);box-shadow:0 1px 0 #2f5c13;transition:bottom .55s cubic-bezier(.55,0,1,.6);pointer-events:none}
 
 /* Super Saiyan forms: aura colour per form, lightning for SSJ2, transformation burst */
-body.form-ssj,body.form-ssj2{--aura:#ffd23f;--aura-glow:#ffb300}
+body{--aura:#d8f2ff;--aura-glow:#79c6ff}body.form-ssj,body.form-ssj2{--aura:#ffd23f;--aura-glow:#ffb300}
 body.form-god{--aura:#ff4d5e;--aura-glow:#d4143a}
 body.form-blue{--aura:#5fd8ff;--aura-glow:#1789ff}
 .fighter::before{content:"";position:absolute;left:6%;right:6%;top:4%;bottom:0;border-radius:50% 50% 36% 36%;background:radial-gradient(ellipse at 50% 70%,var(--aura,transparent) 0%,transparent 66%);opacity:0;z-index:-1;pointer-events:none;transition:opacity .4s ease}
-body:not(.form-base) .fighter::before{opacity:.75;animation:auraFlicker .32s ease-in-out infinite alternate}
+body:not(.form-base) .fighter::before,.fighter.is-fly::before{opacity:.75;animation:auraFlicker .32s ease-in-out infinite alternate}
+.fighter.is-power::before{opacity:1;animation:auraFlicker .12s ease-in-out infinite alternate;transform:scale(1.35)}
 body:not(.form-base) .fighter-pose img{filter:drop-shadow(0 0 2px var(--aura)) drop-shadow(0 0 8px var(--aura-glow))}
 body.form-ssj2 .fighter::after{content:"";position:absolute;top:10%;right:16%;width:14px;height:22px;background:#d9f3ff;clip-path:polygon(55% 0,10% 55%,45% 55%,30% 100%,90% 40%,55% 40%,75% 0);filter:drop-shadow(0 0 4px #6fd0ff);opacity:0;pointer-events:none;animation:boltFlash 1.7s steps(1) infinite}
 body.form-ssj2 .fighter-vegeta::after{left:16%;right:auto;animation-delay:.8s}
@@ -139,10 +147,16 @@ body.no-particles .fighter::before{animation:none}
 .power-flash{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 65%,#fff 0%,var(--aura,#ffd23f) 35%,transparent 75%)}
 body[data-reaction="transform"] .power-flash{animation:powerFlash 4.5s ease-out both}
 body[data-reaction="transform"] .stage{animation:stageQuake .09s linear 22}
-body[data-reaction="transform"] .fighter{animation:none!important}
-body[data-reaction="transform"] .fighter-pose{animation:powerUp 4.5s ease-in-out both!important}
-body[data-reaction="transform"] .fighter::before{opacity:1;animation:auraBurst 4.5s ease-out both}
+body[data-reaction="transform"] .fighter::before{opacity:1;animation:auraBurst 4.5s ease-out both!important}
 
+@keyframes walkBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(2deg)}}
+@keyframes runBob{0%,100%{transform:translateY(0) rotate(7deg)}50%{transform:translateY(-4px) rotate(9deg)}}
+@keyframes guard{from{transform:translateY(0) rotate(2deg)}to{transform:translateY(-2px) rotate(4deg)}}
+@keyframes hover{0%,100%{transform:translateY(0) rotate(4deg)}50%{transform:translateY(-5px) rotate(3deg)}}
+@keyframes meditate{0%,100%{transform:translateY(-4px) scale(1,.94)}50%{transform:translateY(-9px) scale(1,.94)}}
+@keyframes powerShake{0%{transform:translate(-1px,0) scale(1.04)}50%{transform:translate(1px,-1px) scale(1.04)}100%{transform:translate(-1px,0) scale(1.04)}}
+@keyframes hitFlash{0%,100%{transform:translateX(0);filter:none}50%{transform:translateX(-4px) rotate(-6deg);filter:brightness(2.2)}}
+@keyframes beamFire{0%{transform:scaleX(0);opacity:1}25%{transform:scaleX(1);opacity:1}80%{transform:scaleX(1) scaleY(.7);opacity:.9}100%{transform:scaleX(1) scaleY(.1);opacity:0}}
 @keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.012)}}
 @keyframes fightBounce{to{transform:translateY(-7px) rotate(-2deg)}}
 @keyframes sparGoku{0%,23%,100%{transform:translateX(0)}41%{transform:translateX(24px)}55%{transform:translateX(28px)}75%{transform:translateX(-5px)}}
@@ -159,3 +173,6 @@ body[data-reaction="transform"] .fighter::before{opacity:1;animation:auraBurst 4
 @keyframes powerUp{0%{transform:translateY(0) scale(1)}30%{transform:translateY(4px) scale(.94,1.04)}40%{transform:translateY(-10px) scale(1.12)}55%,100%{transform:translateY(0) scale(1)}}
 @keyframes auraBurst{0%{transform:scale(.6);opacity:.2}40%{transform:scale(1.6);opacity:1}100%{transform:scale(1);opacity:.75}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+/* Explorer arena view: just the stage, filling the view */
+body.arena-view .stage{height:100vh;min-height:110px;border-radius:0}
+body.arena-view .speech{top:6px;right:6px}

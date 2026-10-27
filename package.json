@@ -2,35 +2,113 @@
   "name": "dbz-companions-local",
   "displayName": "DBZ Companions — Visual Fan Prototype",
   "description": "Unofficial local fan prototype with illustrated Goku and Vegeta, animated training and VS Code reactions.",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "publisher": "local-prototype",
   "private": true,
   "license": "UNLICENSED",
-  "engines": {"vscode": "^1.85.0"},
-  "categories": ["Other"],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
   "main": "./extension.js",
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "commands": [
-      {"command": "dbzCompanions.show", "title": "DBZ Companions: Show Companion"},
-      {"command": "dbzCompanions.openBeside", "title": "DBZ Companions: Open Large Preview"},
-      {"command": "dbzCompanions.toggleEditorBuddy", "title": "DBZ Companions: Toggle Fighters in Editor"}
+      {
+        "command": "dbzCompanions.show",
+        "title": "DBZ Companions: Show Companion"
+      },
+      {
+        "command": "dbzCompanions.openBeside",
+        "title": "DBZ Companions: Open Large Preview"
+      },
+      {
+        "command": "dbzCompanions.toggleEditorBuddy",
+        "title": "DBZ Companions: Toggle Fighters in Editor"
+      },
+      {
+        "command": "dbzCompanions.throwSenzu",
+        "title": "DBZ Companions: Throw Senzu Bean",
+        "icon": "$(circle-filled)"
+      },
+      {
+        "command": "dbzCompanions.kiBlast",
+        "title": "DBZ Companions: Ki Blast!",
+        "icon": "$(zap)"
+      }
     ],
-    "viewsContainers": {"activitybar": [
-      {"id": "dbzCompanions", "title": "DBZ Companions", "icon": "assets/icon.svg"}
-    ]},
-    "views": {"dbzCompanions": [
-      {"type": "webview", "id": "dbzCompanions.view", "name": "Your Fighters", "icon": "assets/icon.svg"}
-    ]},
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "dbzCompanions",
+          "title": "DBZ Companions",
+          "icon": "assets/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "dbzCompanions": [
+        {
+          "type": "webview",
+          "id": "dbzCompanions.view",
+          "name": "Your Fighters",
+          "icon": "assets/icon.svg"
+        }
+      ],
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "dbzCompanions.arena",
+          "name": "DBZ Arena"
+        }
+      ]
+    },
     "configuration": {
       "title": "DBZ Companions",
       "properties": {
-        "dbzCompanions.reactToSaves": {"type": "boolean", "default": true, "description": "Celebrate when you save a file."},
-        "dbzCompanions.reactToErrors": {"type": "boolean", "default": true, "description": "React when a new code error appears in the active file."},
-        "dbzCompanions.editorBuddy": {"type": "boolean", "default": true, "description": "Show the fighters standing next to the line you are editing."}
+        "dbzCompanions.reactToSaves": {
+          "type": "boolean",
+          "default": true,
+          "description": "Celebrate when you save a file."
+        },
+        "dbzCompanions.reactToErrors": {
+          "type": "boolean",
+          "default": true,
+          "description": "React when a new code error appears in the active file."
+        },
+        "dbzCompanions.editorBuddy": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the fighters standing next to the line you are editing."
+        }
       }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "dbzCompanions.throwSenzu",
+          "when": "view == dbzCompanions.arena",
+          "group": "navigation@1"
+        },
+        {
+          "command": "dbzCompanions.kiBlast",
+          "when": "view == dbzCompanions.arena",
+          "group": "navigation@2"
+        }
+      ]
     }
   },
-  "scripts": {"check": "node --check extension.js && node --check media/app.js"},
-  "files": ["extension.js", "media", "assets", "LICENSE-NOTICE.md"]
+  "scripts": {
+    "check": "node --check extension.js && node --check media/app.js && node --check media/arena.js && node --check media/arena-view.js"
+  },
+  "files": [
+    "extension.js",
+    "media",
+    "assets",
+    "LICENSE-NOTICE.md"
+  ]
 }
