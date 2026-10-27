@@ -2,7 +2,7 @@
   "name": "dbz-companions-local",
   "displayName": "DBZ Companions — Visual Fan Prototype",
   "description": "Unofficial local fan prototype with illustrated Goku and Vegeta, animated training and VS Code reactions.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publisher": "local-prototype",
   "private": true,
   "license": "UNLICENSED",
@@ -18,6 +18,10 @@
   ],
   "contributes": {
     "commands": [
+      {
+        "command": "dbzCompanions.start",
+        "title": "DBZ Companions: Start Coding Session"
+      },
       {
         "command": "dbzCompanions.show",
         "title": "DBZ Companions: Show Companion"
@@ -39,6 +43,11 @@
         "command": "dbzCompanions.kiBlast",
         "title": "DBZ Companions: Ki Blast!",
         "icon": "$(zap)"
+      },
+      {
+        "command": "dbzCompanions.changeBackground",
+        "title": "DBZ Companions: Change Arena Background",
+        "icon": "$(paintcan)"
       }
     ],
     "viewsContainers": {
@@ -46,6 +55,13 @@
         {
           "id": "dbzCompanions",
           "title": "DBZ Companions",
+          "icon": "assets/icon.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "dbzArenaPanel",
+          "title": "DBZ Arena",
           "icon": "assets/icon.svg"
         }
       ]
@@ -63,7 +79,16 @@
         {
           "type": "webview",
           "id": "dbzCompanions.arena",
-          "name": "DBZ Arena"
+          "name": "DBZ Arena",
+          "when": "config.dbzCompanions.position == 'explorer'"
+        }
+      ],
+      "dbzArenaPanel": [
+        {
+          "type": "webview",
+          "id": "dbzCompanions.arenaPanel",
+          "name": "DBZ Arena",
+          "when": "config.dbzCompanions.position != 'explorer'"
         }
       ]
     },
@@ -83,20 +108,52 @@
         "dbzCompanions.editorBuddy": {
           "type": "boolean",
           "default": true,
-          "description": "Show Goku and Vegeta inside the code editor."
+          "description": "Master switch for fighters inside the code editor (see Editor Fighters)."
         },
         "dbzCompanions.editorFighters": {
           "type": "string",
           "enum": [
+            "off",
             "walk",
             "cursor"
           ],
-          "default": "walk",
+          "default": "off",
           "enumDescriptions": [
-            "Walk around along the bottom of the visible code",
+            "Keep the editor clean",
+            "Walk along the bottom of the visible code",
             "Stand next to the line you are editing"
           ],
-          "description": "How the fighters behave inside the code editor."
+          "description": "Show Goku and Vegeta inside the code editor too."
+        },
+        "dbzCompanions.position": {
+          "type": "string",
+          "enum": [
+            "panel",
+            "explorer"
+          ],
+          "default": "panel",
+          "enumDescriptions": [
+            "Bottom panel, next to the terminal (under your code)",
+            "Explorer sidebar"
+          ],
+          "description": "Where the DBZ Arena is shown."
+        },
+        "dbzCompanions.background": {
+          "type": "string",
+          "enum": [
+            "wasteland",
+            "namek",
+            "kamehouse",
+            "night"
+          ],
+          "default": "wasteland",
+          "enumDescriptions": [
+            "Rocky wasteland",
+            "Planet Namek",
+            "Kame House island",
+            "Wasteland at night"
+          ],
+          "description": "Arena background."
         }
       }
     },
@@ -104,13 +161,18 @@
       "view/title": [
         {
           "command": "dbzCompanions.throwSenzu",
-          "when": "view == dbzCompanions.arena",
+          "when": "view == dbzCompanions.arena || view == dbzCompanions.arenaPanel",
           "group": "navigation@1"
         },
         {
           "command": "dbzCompanions.kiBlast",
-          "when": "view == dbzCompanions.arena",
+          "when": "view == dbzCompanions.arena || view == dbzCompanions.arenaPanel",
           "group": "navigation@2"
+        },
+        {
+          "command": "dbzCompanions.changeBackground",
+          "when": "view == dbzCompanions.arena || view == dbzCompanions.arenaPanel",
+          "group": "navigation@3"
         }
       ]
     }

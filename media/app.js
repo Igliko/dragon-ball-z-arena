@@ -112,6 +112,7 @@
     if(m.type==='reaction'&&reactions[m.reaction])react(m.reaction);
     if(m.type==='arena'&&m.action==='senzu')arena.dropBean(null,true);
     if(m.type==='arena'&&m.action==='blast')arena.react('blast');
+    if(m.type==='scene'&&typeof m.scene==='string')document.body.dataset.scene=m.scene;
   });
   render();selected('characters');api.postMessage({type:'ready'});
 })();

@@ -39,6 +39,7 @@
     if(m.type==='reaction'&&typeof m.reaction==='string')arena.react(m.reaction);
     if(m.type==='arena'&&m.action==='senzu')arena.dropBean(null,true);
     if(m.type==='arena'&&m.action==='blast')arena.react('blast');
+    if(m.type==='scene'&&typeof m.scene==='string')document.body.dataset.scene=m.scene;
   });
   new ResizeObserver(()=>arena.layout()).observe(stage);
   api.postMessage({type:'ready'});

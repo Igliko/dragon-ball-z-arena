@@ -9,7 +9,7 @@
 // Modes (dbzCompanions.editorFighters):
 //   walk   - roam along the bottom of the visible code, like pets on a floor
 //   cursor - stand next to the line you are editing
-//   off
+//   off    - default; the arena view is the main home
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
@@ -43,7 +43,7 @@ class EditorFighters {
   mode() {
     const config = vscode.workspace.getConfiguration('dbzCompanions');
     if (config.get('editorBuddy', true) === false) return 'off';
-    return config.get('editorFighters', 'walk');
+    return config.get('editorFighters', 'off');
   }
   image(name, art) {
     const key = `${name}-${art}`;

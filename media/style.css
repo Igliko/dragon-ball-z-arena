@@ -29,7 +29,6 @@ main{flex:1}
 
 /* Stage */
 .stage{position:relative;height:200px;border-radius:4px;overflow:hidden;isolation:isolate;background:#6f9bd6;cursor:pointer;user-select:none}
-.scene{position:absolute;inset:0;width:100%;height:100%;z-index:-2}
 
 /* Scouter readout */
 .scouter{position:absolute;top:8px;left:8px;z-index:6;padding:3px 7px 3px 6px;font:600 10px/1.2 var(--vscode-editor-font-family,ui-monospace,monospace);letter-spacing:.06em;color:#8dffb0;background:rgba(6,40,22,.62);border:1px solid rgba(141,255,176,.45);clip-path:polygon(0 0,100% 0,100% 70%,calc(100% - 6px) 100%,0 100%)}

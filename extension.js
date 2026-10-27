@@ -25,6 +25,7 @@ const FORMS = [
   {id:'god',  name:'Super Saiyan God',  level:20, art:'god'},
   {id:'blue', name:'Super Saiyan Blue', level:30, art:'blue'}
 ];
+const SCENES = ['wasteland','namek','kamehouse','night'];
 const FIGHTER_NAMES = {both:'Goku & Vegeta', goku:'Goku', vegeta:'Vegeta'};
 
 function clamp(v, lo=0, hi=100) { return Math.max(lo, Math.min(hi, v)); }
@@ -209,25 +210,12 @@ class CompanionProvider {
       art[f]={base:url(`art/${f}.png`)};
       for (const form of ['ssj','god','blue']) art[f][form]=url(`art/${f}-${form}.png`);
     }
-    return render({style:url('style.css'),script:url('app.js'),arenaView:url('arena-view.js'),arena:url('arena.js'),art:JSON.stringify(art),nonce,csp});
+    const scene=vscode.workspace.getConfiguration('dbzCompanions').get('background','wasteland');
+    return render({scenes:url('scenes.css'),scene:SCENES.includes(scene)?scene:'wasteland',style:url('style.css'),script:url('app.js'),arenaView:url('arena-view.js'),arena:url('arena.js'),art:JSON.stringify(art),nonce,csp});
   }
 }
-// Flat late-afternoon wasteland, drawn to sit behind the fighters.
-const SCENE_SVG = `<svg class="scene" viewBox="0 0 300 200" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-  <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d8fd3"/><stop offset=".72" stop-color="#f2c891"/></linearGradient>
-    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c98d58"/><stop offset="1" stop-color="#9a6440"/></linearGradient>
-  </defs>
-  <rect width="300" height="200" fill="url(#sky)"/>
-  <circle cx="238" cy="112" r="22" fill="#fff1c9" opacity=".7"/>
-  <g fill="#fff" opacity=".5"><path d="M112 30a6 6 0 0 1 10-4 8 8 0 0 1 14 2 5 5 0 0 1 4 9h-26a4 4 0 0 1-2-7Z"/><path d="M206 58a4 4 0 0 1 7-3 6 6 0 0 1 10 1.5 3.5 3.5 0 0 1 3 6.5h-18a3 3 0 0 1-2-5Z"/></g>
-  <path d="M0 140V122h14l3-18h30l4 18h26l5-10h20l3 10h54l4-24h36l5 24h40l3-14h26l3 14h24v18Z" fill="#b28fa6" opacity=".55"/>
-  <path d="M-4 150v-20h20l4-30 8-4h20l6 4 3 30h18l2-8h12l3 8h90l3-22 9-4h18l7 5 2 21h26l3-6h10l2 6h40v20Z" fill="#a8603d"/>
-  <path d="M16 130l4-30 8-4h20l6 4 3 30M199 130l3-22 9-4h18l7 5 2 21" fill="none" stroke="#c97b4f" stroke-width="2"/>
-  <rect y="146" width="300" height="54" fill="url(#ground)"/>
-  <path d="M0 162h300M0 178h300" stroke="#b07548" stroke-width="1.5" opacity=".5"/>
-  <g fill="#8b5636" opacity=".6"><ellipse cx="40" cy="186" rx="9" ry="2.5"/><ellipse cx="262" cy="170" rx="7" ry="2"/><ellipse cx="160" cy="192" rx="5" ry="1.6"/></g>
-</svg>`;
+// Arena background; each layer is themed and repeats sideways in media/scenes.css.
+const SCENE_HTML = '<div class="scene" aria-hidden="true"><i class="sky"></i><i class="sun"></i><i class="clouds"></i><i class="sea"></i><i class="far"></i><i class="near"></i><i class="ground"></i></div>';
 const ICONS = {
   feed: '<path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M9 7.5c0-1.5 1-2 1-3.5M14 7.5c0-1.5 1-2 1-3.5"/>',
   play: '<rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><path d="M16 11.5h.01M18 14h.01"/>',
@@ -237,11 +225,11 @@ const ICONS = {
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 function arenaDocument(a) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" />
+    <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" /><link rel="stylesheet" href="${a.scenes}" />
     <title>DBZ Arena</title></head>
-<body class="arena-view" data-art='${a.art}'>
+<body class="arena-view" data-art='${a.art}' data-scene="${a.scene}">
   <div class="stage" id="stage" title="Click the ground to drop a senzu bean">
-    ${SCENE_SVG}
+    ${SCENE_HTML}
     <div class="power-flash" aria-hidden="true"></div>
     <span class="speech" id="sceneLabel" aria-live="polite"></span>
   </div>
@@ -251,9 +239,9 @@ function arenaDocument(a) {
 }
 function htmlDocument(a) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" />
+    <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" /><link rel="stylesheet" href="${a.scenes}" />
     <title>DBZ Companions</title></head>
-<body data-art='${a.art}'>
+<body data-art='${a.art}' data-scene="${a.scene}">
   <div class="shell">
     <nav class="nav" aria-label="Companion sections">
       <button type="button" class="nav-item is-active" data-tab="characters" aria-selected="true">Fighters</button>
@@ -263,7 +251,7 @@ function htmlDocument(a) {
     <main>
       <section id="characters" class="page active" aria-label="Fighters">
         <div class="stage" id="stage">
-          ${SCENE_SVG}
+          ${SCENE_HTML}
           <div class="scouter" aria-label="Power level">PWR<b id="powerNum">416</b></div>
           <div class="power-flash" aria-hidden="true"></div>
           <span class="speech" id="sceneLabel" aria-live="polite"></span>
@@ -329,6 +317,11 @@ function activate(context) {
   provider.tick();
   const timer=setInterval(()=>provider.tick(),MINUTE);
   provider.updateLook();
+  // Open the arena once after install so the fighters are visible straight away.
+  if (!context.globalState.get('arenaShown')) {
+    context.globalState.update('arenaShown', true);
+    setTimeout(()=>vscode.commands.executeCommand('dbzCompanions.start').then(undefined,()=>{}), 1500);
+  }
   context.subscriptions.push(
     {dispose:()=>clearInterval(timer)},
     provider,
@@ -337,16 +330,30 @@ function activate(context) {
     vscode.window.onDidChangeTextEditorVisibleRanges(()=>provider.editorFighters.draw()),
     vscode.window.onDidChangeActiveTextEditor(()=>provider.editorFighters.refresh()),
     vscode.window.onDidChangeVisibleTextEditors(()=>provider.editorFighters.refresh()),
-    vscode.workspace.onDidChangeConfiguration(e=>{if (e.affectsConfiguration('dbzCompanions')) provider.editorFighters.refresh();}),
+    vscode.workspace.onDidChangeConfiguration(e=>{
+      if (e.affectsConfiguration('dbzCompanions')) provider.editorFighters.refresh();
+      if (e.affectsConfiguration('dbzCompanions.background')) provider.broadcast({type:'scene',scene:vscode.workspace.getConfiguration('dbzCompanions').get('background','wasteland')});
+    }),
+    vscode.commands.registerCommand('dbzCompanions.start',()=>{
+      const position=vscode.workspace.getConfiguration('dbzCompanions').get('position','panel');
+      return vscode.commands.executeCommand(position==='explorer'?'dbzCompanions.arena.focus':'dbzCompanions.arenaPanel.focus');
+    }),
+    vscode.commands.registerCommand('dbzCompanions.changeBackground',async()=>{
+      const labels={wasteland:'Wasteland',namek:'Planet Namek',kamehouse:'Kame House',night:'Wasteland at night'};
+      const pick=await vscode.window.showQuickPick(SCENES.map(id=>({label:labels[id],id})),{placeHolder:'Arena background'});
+      if (pick) await vscode.workspace.getConfiguration('dbzCompanions').update('background',pick.id,vscode.ConfigurationTarget.Global);
+    }),
     vscode.window.registerWebviewViewProvider('dbzCompanions.arena',{resolveWebviewView:v=>provider.bindArena(v)},{webviewOptions:{retainContextWhenHidden:true}}),
+    vscode.window.registerWebviewViewProvider('dbzCompanions.arenaPanel',{resolveWebviewView:v=>provider.bindArena(v)},{webviewOptions:{retainContextWhenHidden:true}}),
     vscode.commands.registerCommand('dbzCompanions.throwSenzu',()=>provider.throwSenzu()),
     vscode.commands.registerCommand('dbzCompanions.kiBlast',()=>provider.broadcast({type:'arena',action:'blast'})),
     vscode.window.registerWebviewViewProvider('dbzCompanions.view',{resolveWebviewView:v=>provider.bind(v)},{webviewOptions:{retainContextWhenHidden:true}}),
     vscode.commands.registerCommand('dbzCompanions.show',()=>vscode.commands.executeCommand('workbench.view.extension.dbzCompanions')),
     vscode.commands.registerCommand('dbzCompanions.openBeside',()=>provider.openBeside()),
     vscode.commands.registerCommand('dbzCompanions.toggleEditorBuddy',()=>{
-      const config=vscode.workspace.getConfiguration('dbzCompanions');
-      return config.update('editorBuddy',!config.get('editorBuddy',true),vscode.ConfigurationTarget.Global);
+      const config=vscode.workspace.getConfiguration('dbzCompanions'), global=vscode.ConfigurationTarget.Global;
+      if (provider.editorFighters.mode()!=='off') return config.update('editorFighters','off',global);
+      return Promise.all([config.update('editorBuddy',true,global),config.update('editorFighters','walk',global)]);
     }),
     vscode.workspace.onWillSaveTextDocument(e=>provider.onWillSave(e)),
     vscode.workspace.onDidSaveTextDocument(d=>provider.onDidSave(d)),

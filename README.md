@@ -1,4 +1,4 @@
-# DBZ Companions — Visual Fan Prototype (0.6.0)
+# DBZ Companions — Visual Fan Prototype (0.7.0)
 
 Local, unofficial VS Code extension prototype featuring detailed **illustrated 2.5D cutouts of Goku and Vegeta** (derived from the concept art made in this chat). The sprites are **not actual 3D models**, do not rotate in 3D, and are animated through CSS translations, movement, bobbing and reactions. This version prioritizes looking similar to the requested character style rather than the primitive 3D shapes in version 0.1.
 
@@ -6,21 +6,22 @@ Local, unofficial VS Code extension prototype featuring detailed **illustrated 2
 
 1. Open VS Code -> Extensions (the squares icon in the Activity Bar).
 2. Click the `...` menu -> `Install from VSIX...`.
-3. Choose `dbz-companions-local-0.6.0.vsix`. This upgrades the older `dbz-companions-local` extension.
+3. Choose `dbz-companions-local-0.7.0.vsix`. This upgrades the older `dbz-companions-local` extension.
    After upgrading, run `Developer: Reload Window` (`Ctrl+Shift+P`) so the new version is loaded.
-4. Click the `DBZ Companions` icon in the left Activity Bar to open the view. If missing, open Command Palette `Ctrl+Shift+P` and run `DBZ Companions: Show Companion`.
-5. To see a larger panel, run `DBZ Companions: Open Large Preview`.
+4. Open the Command Palette (`Ctrl+Shift+P`) and run **DBZ Companions: Start Coding Session**. The DBZ Arena opens in the bottom panel, under your code, like VS Code Pets.
+5. The full view with stats and settings is the `DBZ Companions` icon in the Activity Bar.
 
 ## Features
 
 - **They live on their own, like vscode-pets.** Goku and Vegeta walk, run, jump, fly, meditate, nap, power up, spar with each other and fire Kamehameha / Galick Gun blasts. Click a fighter to poke them; click the ground to drop a senzu bean and they race to eat it (it feeds them).
-- **DBZ Arena in the Explorer.** A small arena view sits in the Explorer sidebar, so the fighters are on screen while you browse and edit files. Its title bar has *Throw Senzu Bean* and *Ki Blast!* buttons. Drag it to the bottom panel if you prefer.
+- **DBZ Arena, VS Code Pets style.** The arena lives in the bottom panel next to the terminal (set `dbzCompanions.position` to `explorer` to put it in the Explorer instead). Its title bar has *Throw Senzu Bean*, *Ki Blast!* and *Change Arena Background* buttons.
+- **Backgrounds.** Wasteland, Planet Namek, Kame House and Wasteland at night (`dbzCompanions.background`).
+- **Optional: inside the code.** Set `dbzCompanions.editorFighters` to `walk` (roam along the bottom of the visible code) or `cursor` (stand next to the line you are editing). It is off by default.
 - **Super Saiyan forms.** Level up and your fighters transform, with a flash and an aura:
   - Level 5: Super Saiyan (golden hair)
   - Level 10: Super Saiyan 2 (golden hair with lightning)
   - Level 20: Super Saiyan God (red hair)
   - Level 30: Super Saiyan Blue (blue hair)
-- **Inside your code, too.** Goku and Vegeta walk around along the bottom of the visible code, turn around, run and jump, jump when you save, flinch at new errors and power up when they level up. If you type near the bottom, they move to the top. Set `dbzCompanions.editorFighters` to `cursor` to have them stand next to the line you are editing instead, or use `DBZ Companions: Toggle Fighters in Editor` to hide them. The status bar shows your level and form; click it to open the full view.
 - XP comes from typing code (1 XP per 150 characters), manual saves, Play and Training.
 - Animated character picker: Goku, Vegeta or Both.
 - Fighters / Stats / Settings tabs that follow your VS Code colour theme, with an illustrated wasteland stage, a scouter power-level readout and manga speech bubbles.
@@ -33,7 +34,7 @@ Local, unofficial VS Code extension prototype featuring detailed **illustrated 2
 
 ## Keep the full view open next to your code
 
-VS Code does not let extensions draw on top of the editor, so the big animated view lives in a side panel. To keep it always visible, open the Secondary Side Bar on the right (`Ctrl+Alt+B`) and drag the DBZ Companions icon from the left Activity Bar into it. VS Code remembers this, so the fighters stay next to your code while you use the Explorer or Search on the left.
+To keep the full stats view always visible too, open the Secondary Side Bar on the right (`Ctrl+Alt+B`) and drag the DBZ Companions icon from the left Activity Bar into it. VS Code remembers this, so the fighters stay next to your code while you use the Explorer or Search on the left.
 
 ## Important limits
 
