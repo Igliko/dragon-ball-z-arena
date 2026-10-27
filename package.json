@@ -2,7 +2,7 @@
   "name": "dbz-companions-local",
   "displayName": "DBZ Companions — Visual Fan Prototype",
   "description": "Unofficial local fan prototype with illustrated Goku and Vegeta, animated training and VS Code reactions.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "local-prototype",
   "private": true,
   "license": "UNLICENSED",

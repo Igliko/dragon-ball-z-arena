@@ -8,6 +8,11 @@
   const defaults={fighter:'both',tiny:true,training:true,particles:true,mood:85,energy:70,hunger:40,xp:0};
   let state={...defaults,...(api.getState()||{})};
   let reactionTimeout;
+  function idleLabel(){
+    if(state.hunger>=80) return 'So hungry... feed us!';
+    if(state.energy<=15) return 'Too tired... need rest';
+    return state.fighter==='both'&&state.training?'Training together!':'Ready to code!';
+  }
   function render(){
     document.body.classList.toggle('tiny',state.tiny);
     document.body.classList.toggle('no-particles',!state.particles);
@@ -23,7 +28,7 @@
     const level=1+Math.floor(state.xp/50);$('#level').textContent=String(level).padStart(2,'0');
     $('#xpText').textContent=`${state.xp} XP earned`;$('#xpFill').style.width=(state.xp%50)*2+'%';
     $('#modeText').textContent=({both:'Goku + Vegeta',goku:'Goku',vegeta:'Vegeta'})[state.fighter]||'Goku + Vegeta';
-    if(!document.body.dataset.reaction || document.body.dataset.reaction==='idle') $('#sceneLabel').textContent=state.fighter==='both'&&state.training?'Training together!':'Ready to code!';
+    if(!document.body.dataset.reaction || document.body.dataset.reaction==='idle') $('#sceneLabel').textContent=idleLabel();
     api.setState(state);
   }
   function selected(tab){
