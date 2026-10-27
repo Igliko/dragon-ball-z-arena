@@ -30,5 +30,5 @@
     }
   },
   "scripts": {"check": "node --check extension.js && node --check media/app.js"},
-  "files": ["extension.js", "media", "assets", "README.md", "LICENSE-NOTICE.md"]
+  "files": ["extension.js", "media", "assets", "LICENSE-NOTICE.md"]
 }
