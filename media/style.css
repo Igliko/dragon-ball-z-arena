@@ -175,3 +175,12 @@ body[data-reaction="transform"] .fighter::before{opacity:1;animation:auraBurst 4
 /* Explorer arena view: just the stage, filling the view */
 body.arena-view .stage{height:100vh;min-height:110px;border-radius:0}
 body.arena-view .speech{top:6px;right:6px}
+/* First run: pick one fighter (the second one can be added later) */
+.chooser{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(10,12,20,.45);cursor:default}
+.chooser[hidden]{display:none}
+.chooser p{margin:0;padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.45);border-radius:10px}
+.chooser-cards{display:flex;gap:10px}
+.chooser button{display:flex;flex-direction:column;align-items:center;gap:3px;width:84px;padding:6px 4px 5px;border:2px solid var(--ink);border-radius:8px;background:#fff;color:var(--ink);font-weight:700;font-size:12px;transition:transform .12s ease,background .12s ease}
+.chooser button:hover{transform:translateY(-3px);background:#fff4dc}
+.chooser button:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.chooser img{height:clamp(40px,22vh,74px);width:auto}

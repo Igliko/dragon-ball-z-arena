@@ -1,15 +1,15 @@
 'use strict';
 const vscode = require('vscode');
 const path = require('path');
-const {EditorFighters} = require('./editor-fighters');
 const crypto = require('crypto');
 
 const INITIAL = Object.freeze({
-  fighter: 'both', training: true, tiny: true, particles: true,
+  fighter: 'goku', fighterChosen: false, training: true, tiny: true, particles: true,
   mood: 85, energy: 70, hunger: 40, xp: 0, age: 0, lastTick: 0
 });
 const FIGHTERS = new Set(['both','goku','vegeta']);
 const BOOLEAN_OPTIONS = new Set(['training','tiny','particles']);
+const OTHER = {goku:'vegeta', vegeta:'goku'};
 const MINUTE = 60000;
 const MAX_OFFLINE_MINUTES = 8 * 60; // Time away from VS Code counts, but only up to 8 hours.
 const SAVE_XP_COOLDOWN = 10000;
@@ -36,6 +36,7 @@ function saneState(obj) {
   if (!obj || typeof obj !== 'object') return state;
   if (FIGHTERS.has(obj.fighter)) state.fighter = obj.fighter;
   for (const k of BOOLEAN_OPTIONS) if (typeof obj[k] === 'boolean') state[k] = obj[k];
+  if (typeof obj.fighterChosen === 'boolean') state.fighterChosen = obj.fighterChosen;
   for (const k of ['mood','energy','hunger']) if (Number.isFinite(obj[k])) state[k] = clamp(Math.round(obj[k]));
   if (Number.isSafeInteger(obj.xp)) state.xp = clamp(obj.xp,0,1000000);
   for (const k of ['age','lastTick']) if (Number.isSafeInteger(obj[k]) && obj[k] >= 0) state[k] = obj[k];
@@ -60,7 +61,6 @@ class CompanionProvider {
     this.manualSaves = new Set();
     this.errorCounts = new Map();
     this.typedChars = 0;
-    this.editorFighters = new EditorFighters(context);
     this.status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     this.status.command = 'dbzCompanions.show';
     this.status.show();
@@ -68,22 +68,14 @@ class CompanionProvider {
   }
   dispose() {
     this.status.dispose();
-    this.editorFighters.dispose();
   }
-  updateLook() {
-    const level = levelFor(this.state.xp);
-    this.editorFighters.setLook({fighters: this.state.fighter === 'both' ? ['goku','vegeta'] : [this.state.fighter], art: formFor(level).art});
-  }
-  // Reactions go to the webviews and to the fighters in the editor.
   react(kind, except) {
-    this.editorFighters.react(kind);
     this.broadcast({type:'reaction',reaction:kind}, except);
   }
   async addXp(amount) {
     const before = levelFor(this.state.xp);
     this.state.xp = Math.min(1000000, this.state.xp + amount);
     const after = levelFor(this.state.xp);
-    if (after > before) this.editorFighters.react(formFor(after) !== formFor(before) ? 'transform' : 'levelup');
     if (formFor(after) !== formFor(before)) {
       vscode.window.showInformationMessage(`⚡ ${FIGHTER_NAMES[this.state.fighter]} reached ${formFor(after).name} at level ${after}!`);
     }
@@ -96,9 +88,8 @@ class CompanionProvider {
       (next ? `\n${next.name} at level ${next.level}` : '\nMaximum power reached!');
   }
   async onTextChange(event) {
-    const editor = this.editorFighters.editor();
+    const editor = vscode.window.activeTextEditor;
     if (!editor || event.document !== editor.document) return;
-    if (event.contentChanges.length) this.editorFighters.react('type');
     for (const change of event.contentChanges) this.typedChars += Math.min(change.text.length, MAX_CHARS_PER_CHANGE);
     if (this.typedChars < CHARS_PER_XP) return;
     const xp = Math.floor(this.typedChars / CHARS_PER_XP);
@@ -133,6 +124,35 @@ class CompanionProvider {
     if (arena) arena.webview.postMessage({type:'arena',action:'senzu'});
     else this.broadcast({type:'arena',action:'senzu'});
   }
+  // Like vscode-pets: start with one fighter, then add the other one.
+  async setFighter(fighter) {
+    this.state.fighter = fighter;
+    this.state.fighterChosen = true;
+    await this.persist();
+  }
+  async chooseFighter() {
+    const pick = await vscode.window.showQuickPick([
+      {label:'Goku', description:'Cheerful Saiyan raised on Earth', id:'goku'},
+      {label:'Vegeta', description:'Proud prince of all Saiyans', id:'vegeta'}
+    ], {placeHolder:'Choose your fighter'});
+    if (pick) await this.setFighter(pick.id);
+  }
+  async addFighter() {
+    if (!this.state.fighterChosen) return this.chooseFighter();
+    if (this.state.fighter === 'both') {
+      vscode.window.showInformationMessage('Goku and Vegeta are both in the arena already.');
+      return;
+    }
+    await this.setFighter('both');
+  }
+  async removeFighter() {
+    if (this.state.fighter !== 'both') {
+      vscode.window.showInformationMessage(`${FIGHTER_NAMES[this.state.fighter]} is your only fighter. Use "Choose Fighter" to switch.`);
+      return;
+    }
+    const pick = await vscode.window.showQuickPick([{label:'Goku', id:'goku'}, {label:'Vegeta', id:'vegeta'}], {placeHolder:'Which fighter leaves the arena?'});
+    if (pick) await this.setFighter(OTHER[pick.id]);
+  }
   openBeside() {
     const panel=vscode.window.createWebviewPanel('dbzCompanions.large','DBZ Companions — Preview',vscode.ViewColumn.Beside,{
       enableScripts:true, retainContextWhenHidden:true, localResourceRoots:[vscode.Uri.file(path.join(this.context.extensionPath,'media'))]
@@ -147,7 +167,7 @@ class CompanionProvider {
       if (!message || typeof message !== 'object') return;
       if (message.type === 'ready') { await webview.postMessage({type:'state',state:this.state}); return; }
       if (message.type === 'set') {
-        if (message.key === 'fighter' && FIGHTERS.has(message.value)) this.state.fighter=message.value;
+        if (message.key === 'fighter' && FIGHTERS.has(message.value)) {this.state.fighter=message.value;this.state.fighterChosen=true;}
         else if (BOOLEAN_OPTIONS.has(message.key) && typeof message.value === 'boolean') this.state[message.key]=message.value;
         else return;
         await this.persist();
@@ -196,7 +216,6 @@ class CompanionProvider {
     this.state = saneState(this.state);
     await this.context.globalState.update('visualPetState',this.state);
     this.updateStatus();
-    this.updateLook();
     this.broadcast({type:'state',state:this.state});
   }
   broadcast(message, except) {for(const w of this.webviews) if (w!==except) w.postMessage(message).then(undefined,()=>{});}
@@ -216,6 +235,14 @@ class CompanionProvider {
 }
 // Arena background; each layer is themed and repeats sideways in media/scenes.css.
 const SCENE_HTML = '<div class="scene" aria-hidden="true"><i class="sky"></i><i class="sun"></i><i class="clouds"></i><i class="sea"></i><i class="far"></i><i class="near"></i><i class="ground"></i></div>';
+// Shown on the stage until the first fighter is chosen.
+const CHOOSER_HTML = `<div class="chooser" id="chooser" hidden>
+      <p>Choose your fighter</p>
+      <div class="chooser-cards">
+        <button type="button" data-pick="goku"><img alt="" data-art="goku"/><span>Goku</span></button>
+        <button type="button" data-pick="vegeta"><img alt="" data-art="vegeta"/><span>Vegeta</span></button>
+      </div>
+    </div>`;
 const ICONS = {
   feed: '<path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M9 7.5c0-1.5 1-2 1-3.5M14 7.5c0-1.5 1-2 1-3.5"/>',
   play: '<rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><path d="M16 11.5h.01M18 14h.01"/>',
@@ -232,6 +259,7 @@ function arenaDocument(a) {
     ${SCENE_HTML}
     <div class="power-flash" aria-hidden="true"></div>
     <span class="speech" id="sceneLabel" aria-live="polite"></span>
+    ${CHOOSER_HTML}
   </div>
   <script nonce="${a.nonce}" src="${a.arena}"></script>
   <script nonce="${a.nonce}" src="${a.arenaView}"></script>
@@ -255,6 +283,7 @@ function htmlDocument(a) {
           <div class="scouter" aria-label="Power level">PWR<b id="powerNum">416</b></div>
           <div class="power-flash" aria-hidden="true"></div>
           <span class="speech" id="sceneLabel" aria-live="polite"></span>
+          ${CHOOSER_HTML}
         </div>
         <div class="segmented" role="group" aria-label="Choose fighters">
           <button type="button" class="picker" data-fighter="goku">Goku</button>
@@ -299,7 +328,7 @@ function htmlDocument(a) {
         <label class="toggle-row"><input id="training" type="checkbox" checked/><span><strong>Sparring</strong><small>Goku and Vegeta spar while you code</small></span></label>
         <label class="toggle-row"><input id="tiny" type="checkbox" checked/><span><strong>Compact fighters</strong><small>Smaller sprites on the stage</small></span></label>
         <label class="toggle-row"><input id="particles" type="checkbox" checked/><span><strong>Aura effects</strong><small>Flickering auras and lightning</small></span></label>
-        <p class="hint">Save and error reactions, and the fighters next to your cursor, are in VS Code Settings under DBZ Companions.</p>
+        <p class="hint">Save and error reactions, the arena position and its background are in VS Code Settings under DBZ Companions.</p>
         <p class="hint">Unofficial fan project. Dragon Ball characters belong to their owners (Bird Studio, Shueisha, Toei Animation). Not for redistribution.</p>
       </section>
     </main>
@@ -316,7 +345,6 @@ function activate(context) {
   provider.lastErrorAt=0;
   provider.tick();
   const timer=setInterval(()=>provider.tick(),MINUTE);
-  provider.updateLook();
   // Open the arena once after install so the fighters are visible straight away.
   if (!context.globalState.get('arenaShown')) {
     context.globalState.update('arenaShown', true);
@@ -326,12 +354,7 @@ function activate(context) {
     {dispose:()=>clearInterval(timer)},
     provider,
     vscode.workspace.onDidChangeTextDocument(e=>provider.onTextChange(e)),
-    vscode.window.onDidChangeTextEditorSelection(e=>{if (e.textEditor===vscode.window.activeTextEditor) provider.editorFighters.draw();}),
-    vscode.window.onDidChangeTextEditorVisibleRanges(()=>provider.editorFighters.draw()),
-    vscode.window.onDidChangeActiveTextEditor(()=>provider.editorFighters.refresh()),
-    vscode.window.onDidChangeVisibleTextEditors(()=>provider.editorFighters.refresh()),
     vscode.workspace.onDidChangeConfiguration(e=>{
-      if (e.affectsConfiguration('dbzCompanions')) provider.editorFighters.refresh();
       if (e.affectsConfiguration('dbzCompanions.background')) provider.broadcast({type:'scene',scene:vscode.workspace.getConfiguration('dbzCompanions').get('background','wasteland')});
     }),
     vscode.commands.registerCommand('dbzCompanions.start',()=>{
@@ -350,11 +373,9 @@ function activate(context) {
     vscode.window.registerWebviewViewProvider('dbzCompanions.view',{resolveWebviewView:v=>provider.bind(v)},{webviewOptions:{retainContextWhenHidden:true}}),
     vscode.commands.registerCommand('dbzCompanions.show',()=>vscode.commands.executeCommand('workbench.view.extension.dbzCompanions')),
     vscode.commands.registerCommand('dbzCompanions.openBeside',()=>provider.openBeside()),
-    vscode.commands.registerCommand('dbzCompanions.toggleEditorBuddy',()=>{
-      const config=vscode.workspace.getConfiguration('dbzCompanions'), global=vscode.ConfigurationTarget.Global;
-      if (provider.editorFighters.mode()!=='off') return config.update('editorFighters','off',global);
-      return Promise.all([config.update('editorBuddy',true,global),config.update('editorFighters','walk',global)]);
-    }),
+    vscode.commands.registerCommand('dbzCompanions.chooseFighter',()=>provider.chooseFighter()),
+    vscode.commands.registerCommand('dbzCompanions.addFighter',()=>provider.addFighter()),
+    vscode.commands.registerCommand('dbzCompanions.removeFighter',()=>provider.removeFighter()),
     vscode.workspace.onWillSaveTextDocument(e=>provider.onWillSave(e)),
     vscode.workspace.onDidSaveTextDocument(d=>provider.onDidSave(d)),
     vscode.languages.onDidChangeDiagnostics(e=>provider.onDiagnostics(e))

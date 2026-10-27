@@ -6,8 +6,8 @@
   const SPEED={walk:34,run:92,dash:190,fly:26};
   const GRAVITY=900;
   const LINES={
-    goku:{hello:['Hey!','Hi there!','Let\'s train!'],blast:'Kamehameha!',power:'Haaaaa!',hungry:'I\'m starving...',eat:'Mmm, senzu!',idle:['Hey Vegeta!','Nice code!','Let\'s go!']},
-    vegeta:{hello:['Hmph.','What?','Don\'t touch me.'],blast:'Galick Gun!',power:'Raaaah!',hungry:'Feed me, now.',eat:'Hmph. Not bad.',idle:['Kakarot!','I\'m the prince!','Hmph.']}
+    goku:{join:'Hey, I\'m here!',greet:'Hey Vegeta!',hello:['Hey!','Hi there!','Let\'s train!'],blast:'Kamehameha!',power:'Haaaaa!',hungry:'I\'m starving...',eat:'Mmm, senzu!',idle:['Hey Vegeta!','Nice code!','Let\'s go!']},
+    vegeta:{join:'Kakarot! Fight me!',greet:'Kakarot!',hello:['Hmph.','What?','Don\'t touch me.'],blast:'Galick Gun!',power:'Raaaah!',hungry:'Feed me, now.',eat:'Hmph. Not bad.',idle:['Kakarot!','I\'m the prince!','Hmph.']}
   };
   const pick=a=>Array.isArray(a)?a[Math.floor(Math.random()*a.length)]:a;
   const rand=(lo,hi)=>lo+Math.random()*(hi-lo);
@@ -15,7 +15,7 @@
 
   function DBZArena(stage,opts={}){
     const art=opts.art||{};
-    let look={fighters:['goku','vegeta'],form:'base'};
+    let look={fighters:[],form:'base'};
     let mood={energy:70,hunger:40,training:true};
     const fighters=new Map();
     const beans=[];
@@ -43,19 +43,37 @@
       for(const f of fighters.values()){
         f.h=h;f.w=Math.round(h*RATIO[f.name]);
         f.el.style.width=f.w+'px';f.el.style.height=h+'px';f.el.style.bottom=groundY()+'px';
-        if(!f.placed){f.x=fighters.size===1?(W-f.w)/2:(i===0?W*.22:W*.78-f.w);f.placed=true;}
+        if(!f.placed){
+          const o=other(f);
+          // A fighter who joins later lands on the side away from the one already here.
+          if(f.dropIn&&o&&o.placed)f.x=o.x+o.w/2<W/2?W*.75-f.w/2:W*.25-f.w/2;
+          else f.x=fighters.size===1?(W-f.w)/2:(i===0?W*.22:W*.78-f.w);
+          f.placed=true;
+        }
         f.x=Math.max(0,Math.min(W-f.w,f.x));i++;
       }
     }
     function setLook(next){
       look={...look,...next};
       for(const [name,f] of fighters) if(!look.fighters.includes(name)){f.el.remove();fighters.delete(name);}
-      look.fighters.forEach((name,i)=>{if(!fighters.has(name))fighters.set(name,makeFighter(name,i));});
+      const joined=[];
+      look.fighters.forEach((name,i)=>{
+        if(fighters.has(name))return;
+        const f=makeFighter(name,i);
+        f.dropIn=fighters.size>0;
+        fighters.set(name,f);
+        if(f.dropIn)joined.push(f);
+      });
       for(const f of fighters.values()){
         const src=art[f.name]&&(art[f.name][look.form]||art[f.name].base);
         if(src&&f.img.getAttribute('src')!==src)f.img.setAttribute('src',src);
       }
       layout();
+      // New arrivals drop in from the sky.
+      for(const f of joined){
+        f.y=Math.max(70,H*.8);f.vy=0;setState(f,'jump',9);say(f,LINES[f.name].join,2200);
+        const o=other(f);if(o){face(o,f.x+f.w/2);setTimeout(()=>{if(fighters.has(o.name))say(o,LINES[o.name].greet,1600);},900);}
+      }
     }
     function setMood(next){mood={...mood,...next};}
 
@@ -151,6 +169,7 @@
       say(f,mood.hunger>=60?pick(LINES[f.name].hungry):'Senzu!',1200);
     }
     function dropBean(x,fromUser){
+      if(!fighters.size)return;
       size();
       if(x==null)x=rand(W*.15,W*.85);
       const el=document.createElement('span');el.className='senzu';
@@ -286,5 +305,13 @@
     requestAnimationFrame(frame);
     return {setLook,setMood,react,dropBean,say:(name,text)=>{const f=fighters.get(name);if(f)say(f,text);},layout};
   }
+  // "Choose your fighter" overlay shown until the first fighter is picked.
+  function DBZChooser(el,art,onPick){
+    el.querySelectorAll('img[data-art]').forEach(img=>{const a=art[img.dataset.art];if(a)img.setAttribute('src',a.base);});
+    el.addEventListener('click',e=>e.stopPropagation());
+    el.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>onPick(b.dataset.pick)));
+    return {show(visible){el.hidden=!visible;}};
+  }
   window.DBZArena=DBZArena;
+  window.DBZChooser=DBZChooser;
 })();

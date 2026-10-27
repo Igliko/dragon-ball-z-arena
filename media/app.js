@@ -5,7 +5,7 @@
   const api=typeof acquireVsCodeApi==='function' ? acquireVsCodeApi() : {
     postMessage(message){console.info('preview message:',message);},getState(){return undefined;},setState(){}
   };
-  const defaults={fighter:'both',tiny:true,training:true,particles:true,mood:85,energy:70,hunger:40,xp:0};
+  const defaults={fighter:'goku',fighterChosen:false,tiny:true,training:true,particles:true,mood:85,energy:70,hunger:40,xp:0};
   let state={...defaults,...(api.getState()||{})};
   let reactionTimeout;
   let lastLevel=null;
@@ -23,6 +23,8 @@
   let art={};
   try{art=JSON.parse(document.body.dataset.art||'{}');}catch{art={};}
   const arena=window.DBZArena($('#stage'),{art,heightRatio:.5,maxHeight:100,groundRatio:.11,onFeed:()=>localAction('feed',false)});
+  const chooser=window.DBZChooser($('#chooser'),art,pickFighter);
+  function pickFighter(fighter){state.fighter=fighter;state.fighterChosen=true;render();api.postMessage({type:'set',key:'fighter',value:fighter});}
   // Shown in the speech bubble only when the fighters need something.
   function idleLabel(){
     if(state.hunger>=80) return 'So hungry... feed us!';
@@ -34,7 +36,7 @@
   const powerFor=level=>Math.round(416*Math.pow(1.18,level-1));
   function render(){
     document.body.classList.toggle('no-particles',!state.particles);
-    $$('.picker').forEach(b=>{b.classList.toggle('selected',b.dataset.fighter===state.fighter);b.setAttribute('aria-pressed',String(b.dataset.fighter===state.fighter));});
+    $$('.picker').forEach(b=>{b.classList.toggle('selected',state.fighterChosen&&b.dataset.fighter===state.fighter);b.setAttribute('aria-pressed',String(b.dataset.fighter===state.fighter));});
     for(const id of ['mood','energy','hunger']){
       const value=Math.max(0,Math.min(100,Math.round(state[id])));
       $(`#${id}Num`).textContent=value+'%';$(`#${id}Fill`).style.width=value+'%';$(`#${id}Detail`).textContent=value+'%';
@@ -43,7 +45,8 @@
     const level=levelFor(state.xp);$('#level').textContent=String(level).padStart(2,'0');
     const form=formFor(level),next=FORMS.find(f=>f.level>level);
     for(const f of FORMS) document.body.classList.toggle('form-'+f.id,f===form);
-    arena.setLook({fighters:state.fighter==='both'?['goku','vegeta']:[state.fighter],form:form.art,maxHeight:state.tiny?82:100});
+    chooser.show(!state.fighterChosen);
+    arena.setLook({fighters:!state.fighterChosen?[]:state.fighter==='both'?['goku','vegeta']:[state.fighter],form:form.art,maxHeight:state.tiny?82:100});
     arena.setMood({energy:state.energy,hunger:state.hunger,training:state.training});
     $('#formText').textContent=form.name;
     $('#nextFormText').textContent=next?`Next: ${next.name} at Lv ${next.level}`:'Maximum power!';
@@ -57,7 +60,7 @@
       li.classList.toggle('reached',level>=f.level);li.classList.toggle('current',f===form);
     });
     const need=idleLabel();
-    document.body.classList.toggle('needs',!!need);
+    document.body.classList.toggle('needs',!!need&&state.fighterChosen);
     if(need) $('#sceneLabel').textContent=need;
     api.setState(state);
   }
@@ -103,7 +106,7 @@
     render(); react(kind,undefined,animate);checkProgress();api.postMessage({type:'action',action:kind});
   }
   $$('.nav-item').forEach(b=>b.addEventListener('click',()=>selected(b.dataset.tab)));
-  $$('.picker').forEach(b=>b.addEventListener('click',()=>{state.fighter=b.dataset.fighter;render();api.postMessage({type:'set',key:'fighter',value:state.fighter});}));
+  $$('.picker').forEach(b=>b.addEventListener('click',()=>pickFighter(b.dataset.fighter)));
   $$('.action').forEach(b=>b.addEventListener('click',()=>localAction(b.dataset.action)));
   for(const name of ['training','tiny','particles']) $('#'+name).addEventListener('change',event=>{state[name]=event.target.checked;render();api.postMessage({type:'set',key:name,value:state[name]});});
   window.addEventListener('message',event=>{

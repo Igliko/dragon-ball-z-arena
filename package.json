@@ -2,7 +2,7 @@
   "name": "dbz-companions-local",
   "displayName": "DBZ Companions — Visual Fan Prototype",
   "description": "Unofficial local fan prototype with illustrated Goku and Vegeta, animated training and VS Code reactions.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "publisher": "local-prototype",
   "private": true,
   "license": "UNLICENSED",
@@ -31,10 +31,6 @@
         "title": "DBZ Companions: Open Large Preview"
       },
       {
-        "command": "dbzCompanions.toggleEditorBuddy",
-        "title": "DBZ Companions: Toggle Fighters in Editor"
-      },
-      {
         "command": "dbzCompanions.throwSenzu",
         "title": "DBZ Companions: Throw Senzu Bean",
         "icon": "$(circle-filled)"
@@ -48,6 +44,19 @@
         "command": "dbzCompanions.changeBackground",
         "title": "DBZ Companions: Change Arena Background",
         "icon": "$(paintcan)"
+      },
+      {
+        "command": "dbzCompanions.addFighter",
+        "title": "DBZ Companions: Add Fighter",
+        "icon": "$(person-add)"
+      },
+      {
+        "command": "dbzCompanions.removeFighter",
+        "title": "DBZ Companions: Remove Fighter"
+      },
+      {
+        "command": "dbzCompanions.chooseFighter",
+        "title": "DBZ Companions: Choose Fighter"
       }
     ],
     "viewsContainers": {
@@ -105,26 +114,6 @@
           "default": true,
           "description": "React when a new code error appears in the active file."
         },
-        "dbzCompanions.editorBuddy": {
-          "type": "boolean",
-          "default": true,
-          "description": "Master switch for fighters inside the code editor (see Editor Fighters)."
-        },
-        "dbzCompanions.editorFighters": {
-          "type": "string",
-          "enum": [
-            "off",
-            "walk",
-            "cursor"
-          ],
-          "default": "off",
-          "enumDescriptions": [
-            "Keep the editor clean",
-            "Walk along the bottom of the visible code",
-            "Stand next to the line you are editing"
-          ],
-          "description": "Show Goku and Vegeta inside the code editor too."
-        },
         "dbzCompanions.position": {
           "type": "string",
           "enum": [
@@ -160,6 +149,11 @@
     "menus": {
       "view/title": [
         {
+          "command": "dbzCompanions.addFighter",
+          "when": "view == dbzCompanions.arena || view == dbzCompanions.arenaPanel",
+          "group": "navigation@0"
+        },
+        {
           "command": "dbzCompanions.throwSenzu",
           "when": "view == dbzCompanions.arena || view == dbzCompanions.arenaPanel",
           "group": "navigation@1"
@@ -173,18 +167,27 @@
           "command": "dbzCompanions.changeBackground",
           "when": "view == dbzCompanions.arena || view == dbzCompanions.arenaPanel",
           "group": "navigation@3"
+        },
+        {
+          "command": "dbzCompanions.chooseFighter",
+          "when": "view == dbzCompanions.arena || view == dbzCompanions.arenaPanel",
+          "group": "fighters@1"
+        },
+        {
+          "command": "dbzCompanions.removeFighter",
+          "when": "view == dbzCompanions.arena || view == dbzCompanions.arenaPanel",
+          "group": "fighters@2"
         }
       ]
     }
   },
   "scripts": {
-    "check": "node --check extension.js && node --check media/app.js && node --check media/arena.js && node --check media/arena-view.js && node --check editor-fighters.js"
+    "check": "node --check extension.js && node --check media/app.js && node --check media/arena.js && node --check media/arena-view.js"
   },
   "files": [
     "extension.js",
     "media",
     "assets",
-    "LICENSE-NOTICE.md",
-    "editor-fighters.js"
+    "LICENSE-NOTICE.md"
   ]
 }
