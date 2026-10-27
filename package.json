@@ -1,0 +1,34 @@
+{
+  "name": "dbz-companions-local",
+  "displayName": "DBZ Companions — Visual Fan Prototype",
+  "description": "Unofficial local fan prototype with illustrated Goku and Vegeta, animated training and VS Code reactions.",
+  "version": "0.2.0",
+  "publisher": "local-prototype",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {"vscode": "^1.85.0"},
+  "categories": ["Other"],
+  "main": "./extension.js",
+  "activationEvents": ["onView:dbzCompanions.view", "onCommand:dbzCompanions.show", "onCommand:dbzCompanions.openBeside"],
+  "contributes": {
+    "commands": [
+      {"command": "dbzCompanions.show", "title": "DBZ Companions: Show Companion"},
+      {"command": "dbzCompanions.openBeside", "title": "DBZ Companions: Open Large Preview"}
+    ],
+    "viewsContainers": {"activitybar": [
+      {"id": "dbzCompanions", "title": "DBZ Companions", "icon": "assets/icon.svg"}
+    ]},
+    "views": {"dbzCompanions": [
+      {"type": "webview", "id": "dbzCompanions.view", "name": "Your Fighters", "icon": "assets/icon.svg"}
+    ]},
+    "configuration": {
+      "title": "DBZ Companions",
+      "properties": {
+        "dbzCompanions.reactToSaves": {"type": "boolean", "default": true, "description": "Celebrate when you save a file."},
+        "dbzCompanions.reactToErrors": {"type": "boolean", "default": true, "description": "React when a new code error appears in the active file."}
+      }
+    }
+  },
+  "scripts": {"check": "node --check extension.js && node --check media/app.js"},
+  "files": ["extension.js", "media", "assets", "README.md", "LICENSE-NOTICE.md"]
+}
