@@ -526,8 +526,9 @@ function activate(context) {
   provider.tick();
   provider.updateChamber();
   provider.welcomeBall();
-  // After an update, say so once: it also shows which version is running.
-  if (context.globalState.get('arenaShown') && context.globalState.get('lastVersion') !== VERSION) {
+  // After a feature update (not a patch like 1.0.1), say so once: it also shows which version is running.
+  const minor = v => String(v||'').split('.').slice(0,2).join('.');
+  if (context.globalState.get('arenaShown') && minor(context.globalState.get('lastVersion')) !== minor(VERSION)) {
     vscode.window.showInformationMessage(`Dragon Ball Z Arena updated to ${VERSION}: the arenas are redrawn, and the Tenkaichi Budokai and Kami's Lookout are new.`, 'Pick an Arena')
       .then(pick => { if (pick) Promise.resolve(vscode.commands.executeCommand('dbzCompanions.start')).then(()=>vscode.commands.executeCommand('dbzCompanions.changeBackground')); }, ()=>{});
   }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1 (2026-10-28)
+
+- New Marketplace icon: Super Saiyan Goku.
+
 ## 1.0.0 (2026-10-28)
 
 First release on the VS Code Marketplace. Earlier versions were private prototypes.
