@@ -58,4 +58,4 @@ Dragon Ball Z Arena is a free, unofficial fan project. It is not affiliated with
 
 Open this folder in VS Code and press `F5` to launch an Extension Development Host. `npm run check` validates the JavaScript syntax, and `npx @vscode/vsce package` builds a .vsix.
 
-The backgrounds and the Shenron drawing are generated: `python3 tools/scenes.py media/scenes.css` and `python3 tools/shenron.py media/shenron.js`. The Marketplace icon, `assets/icon.png`, is `assets/icon.svg` rendered at 256 × 256.
+The backgrounds and the Shenron drawing are generated: `python3 tools/scenes.py media/scenes.css` and `python3 tools/shenron.py media/shenron.js`. The Marketplace icon, `assets/icon.png`, is a 256 × 256 crop of the Super Saiyan Goku sprite.
