@@ -2,7 +2,7 @@
   "name": "dbz-companions-local",
   "displayName": "DBZ Companions — Visual Fan Prototype",
   "description": "Unofficial local fan prototype: Goku and Vegeta live in a VS Code arena, level up into Super Saiyan forms while you code, hunt Dragon Balls and train in the Time Chamber.",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "publisher": "local-prototype",
   "private": true,
   "license": "UNLICENSED",
@@ -143,14 +143,18 @@
             "wasteland",
             "namek",
             "kamehouse",
+            "tournament",
+            "lookout",
             "night"
           ],
           "default": "wasteland",
           "enumDescriptions": [
-            "Rocky wasteland",
-            "Planet Namek",
-            "Kame House island",
-            "Wasteland at night"
+            "Rocky wasteland with a Saiyan space pod",
+            "Planet Namek: three suns, a green sea and Ajisa trees",
+            "Kame House on its beach",
+            "Tenkaichi Budokai: the ring, the crowd and the hall",
+            "Kami's Lookout, high above the clouds",
+            "The wasteland at night, under the moon and stars"
           ],
           "description": "Arena background."
         },

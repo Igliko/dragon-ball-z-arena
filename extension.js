@@ -38,7 +38,8 @@ const FORMS = [
   {id:'god',  name:'Super Saiyan God',  level:20, art:'god'},
   {id:'blue', name:'Super Saiyan Blue', level:30, art:'blue'}
 ];
-const SCENES = ['wasteland','namek','kamehouse','night'];
+// Arena backgrounds (drawn in media/scenes.css) and their names in the picker.
+const SCENES = {wasteland:'Wasteland', namek:'Planet Namek', kamehouse:'Kame House', tournament:'Tenkaichi Budokai', lookout:"Kami's Lookout", night:'Wasteland at night'};
 const FIGHTER_NAMES = {both:'Goku & Vegeta', goku:'Goku', vegeta:'Vegeta'};
 
 function clamp(v, lo=0, hi=100) { return Math.max(lo, Math.min(hi, v)); }
@@ -301,7 +302,7 @@ class CompanionProvider {
   }
   config() {
     const c = vscode.workspace.getConfiguration('dbzCompanions'), scene = c.get('background','wasteland');
-    return {type:'config', config:{scene:SCENES.includes(scene) ? scene : 'wasteland', hud:c.get('showHud',true), dragonBalls:c.get('dragonBalls',true)}};
+    return {type:'config', config:{scene:scene in SCENES ? scene : 'wasteland', hud:c.get('showHud',true), dragonBalls:c.get('dragonBalls',true)}};
   }
   register(webview) {
     this.webviews.add(webview);
@@ -407,7 +408,7 @@ class CompanionProvider {
   }
 }
 // Arena background; each layer is themed and repeats sideways in media/scenes.css.
-const SCENE_HTML = '<div class="scene" aria-hidden="true"><i class="sky"></i><i class="sun"></i><i class="clouds"></i><i class="sea"></i><i class="far"></i><i class="near"></i><i class="ground"></i></div>';
+const SCENE_HTML = '<div class="scene" aria-hidden="true">' + ['sky','sun','stars','clouds','far','sea','mid','land','near','ground','mark','front'].map(c => `<i class="${c}"></i>`).join('') + '</div>';
 // Shown on the stage until the first fighter is chosen.
 const CHOOSER_HTML = `<div class="chooser" id="chooser" hidden>
       <p>Choose your fighter</p>
@@ -520,8 +521,8 @@ function activate(context) {
   provider.welcomeBall();
   // After an update, say so once: it also shows which version is running.
   if (context.globalState.get('arenaShown') && context.globalState.get('lastVersion') !== VERSION) {
-    vscode.window.showInformationMessage(`DBZ Companions updated to ${VERSION}: Dragon Balls, Shenron and the Hyperbolic Time Chamber are in the arena.`, 'Open Arena')
-      .then(pick => { if (pick) vscode.commands.executeCommand('dbzCompanions.start'); }, ()=>{});
+    vscode.window.showInformationMessage(`DBZ Companions updated to ${VERSION}: the arenas are redrawn, and the Tenkaichi Budokai and Kami's Lookout are new.`, 'Pick an Arena')
+      .then(pick => { if (pick) Promise.resolve(vscode.commands.executeCommand('dbzCompanions.start')).then(()=>vscode.commands.executeCommand('dbzCompanions.changeBackground')); }, ()=>{});
   }
   context.globalState.update('lastVersion', VERSION);
   const timer=setInterval(()=>provider.tick(),MINUTE);
@@ -541,10 +542,21 @@ function activate(context) {
       const position=vscode.workspace.getConfiguration('dbzCompanions').get('position','panel');
       return vscode.commands.executeCommand(position==='explorer'?'dbzCompanions.arena.focus':'dbzCompanions.arenaPanel.focus');
     }),
-    vscode.commands.registerCommand('dbzCompanions.changeBackground',async()=>{
-      const labels={wasteland:'Wasteland',namek:'Planet Namek',kamehouse:'Kame House',night:'Wasteland at night'};
-      const pick=await vscode.window.showQuickPick(SCENES.map(id=>({label:labels[id],id})),{placeHolder:'Arena background'});
-      if (pick) await vscode.workspace.getConfiguration('dbzCompanions').update('background',pick.id,vscode.ConfigurationTarget.Global);
+    vscode.commands.registerCommand('dbzCompanions.changeBackground',()=>{
+      const config=provider.config(), current=config.config.scene;
+      const qp=vscode.window.createQuickPick();
+      qp.placeholder='Arena background';
+      qp.items=Object.entries(SCENES).map(([id,label])=>({label,id,description:id===current?'current':''}));
+      qp.activeItems=qp.items.filter(i=>i.id===current);
+      // The arena shows each background while it is highlighted; Escape puts the current one back.
+      let picked=false;
+      qp.onDidChangeActive(([item])=>{ if (item) provider.broadcast({...config,config:{...config.config,scene:item.id}}); });
+      qp.onDidAccept(()=>{
+        const [item]=qp.selectedItems; picked=!!item; qp.hide();
+        if (item) vscode.workspace.getConfiguration('dbzCompanions').update('background',item.id,vscode.ConfigurationTarget.Global).then(undefined,()=>provider.broadcast(provider.config()));
+      });
+      qp.onDidHide(()=>{ if (!picked) provider.broadcast(provider.config()); qp.dispose(); });
+      qp.show();
     }),
     vscode.window.registerWebviewViewProvider('dbzCompanions.arena',{resolveWebviewView:v=>provider.bindArena(v)},{webviewOptions:{retainContextWhenHidden:true}}),
     vscode.window.registerWebviewViewProvider('dbzCompanions.arenaPanel',{resolveWebviewView:v=>provider.bindArena(v)},{webviewOptions:{retainContextWhenHidden:true}}),
