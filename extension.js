@@ -11,6 +11,7 @@ const INITIAL = Object.freeze({
 });
 const STATE_KEY = 'visualPetState';
 const VERSION = require('./package.json').version;
+const OLD_PROTOTYPE = 'local-prototype.dbz-companions-local'; // The .vsix builds before the Marketplace release.
 const WINDOW_ID = crypto.randomBytes(8).toString('hex'); // Each VS Code window has its own; the saved state is shared.
 const FIGHTERS = new Set(['both','goku','vegeta']);
 const BOOLEAN_OPTIONS = new Set(['training','tiny','particles']);
@@ -503,7 +504,7 @@ function htmlDocument(a) {
         <label class="toggle-row"><input id="tiny" type="checkbox" checked/><span><strong>Compact fighters</strong><small>Smaller sprites on the stage and in the arena</small></span></label>
         <label class="toggle-row"><input id="particles" type="checkbox" checked/><span><strong>Aura effects</strong><small>Flickering auras and lightning</small></span></label>
         <p class="hint">Save and error reactions, Dragon Balls, the scouter, the arena position and its background are in VS Code Settings under DBZ Companions.</p>
-        <p class="hint">Unofficial fan project. Dragon Ball characters belong to their owners (Bird Studio, Shueisha, Toei Animation). Not for redistribution.</p>
+        <p class="hint">Unofficial fan project, not affiliated with Bird Studio, Shueisha or Toei Animation, who own Dragon Ball and its characters.</p>
       </section>
     </main>
   </div>
@@ -512,6 +513,12 @@ function htmlDocument(a) {
 }
 
 function activate(context) {
+  // The local prototype registers the same commands and views, so wait until it is uninstalled.
+  if (vscode.extensions.getExtension(OLD_PROTOTYPE)) {
+    vscode.window.showWarningMessage('The old local DBZ Companions prototype is still installed. Uninstall it, then reload the window, to start DBZ Companions.', 'Show Old Version')
+      .then(pick => { if (pick) vscode.commands.executeCommand('workbench.extensions.search', '@installed Visual Fan Prototype'); }, ()=>{});
+    return;
+  }
   const provider=new CompanionProvider(context);
   // Errors that already exist at startup are not "new" errors.
   provider.onDiagnostics({uris:vscode.languages.getDiagnostics().map(([uri])=>uri)});
