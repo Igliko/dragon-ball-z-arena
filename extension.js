@@ -10,6 +10,7 @@ const INITIAL = Object.freeze({
   chamberUntil: 0, chamberMinutes: 0, chamberOwner: '', sessions: 0, focusTotal: 0
 });
 const STATE_KEY = 'visualPetState';
+const VERSION = require('./package.json').version;
 const WINDOW_ID = crypto.randomBytes(8).toString('hex'); // Each VS Code window has its own; the saved state is shared.
 const FIGHTERS = new Set(['both','goku','vegeta']);
 const BOOLEAN_OPTIONS = new Set(['training','tiny','particles']);
@@ -187,6 +188,14 @@ class CompanionProvider {
     await this.persist();
     this.react('chamber');
     vscode.window.showInformationMessage(`Time Chamber training complete: ${minutes} minutes. +${minutes} XP`);
+  }
+  // The very first Dragon Ball is already waiting in the arena, so the hunt is easy to discover.
+  async welcomeBall() {
+    this.sync();
+    const s = this.state;
+    if (s.balls || s.wishes || s.ballOut || !vscode.workspace.getConfiguration('dbzCompanions').get('dragonBalls', true)) return;
+    s.ballOut = 1 + Math.floor(Math.random() * 7);
+    await this.persist();
   }
   // Coding uncovers Dragon Balls: one waits in the arena until it is collected.
   findBalls(xp) {
@@ -508,6 +517,13 @@ function activate(context) {
   provider.lastErrorAt=0;
   provider.tick();
   provider.updateChamber();
+  provider.welcomeBall();
+  // After an update, say so once: it also shows which version is running.
+  if (context.globalState.get('arenaShown') && context.globalState.get('lastVersion') !== VERSION) {
+    vscode.window.showInformationMessage(`DBZ Companions updated to ${VERSION}: Dragon Balls, Shenron and the Hyperbolic Time Chamber are in the arena.`, 'Open Arena')
+      .then(pick => { if (pick) vscode.commands.executeCommand('dbzCompanions.start'); }, ()=>{});
+  }
+  context.globalState.update('lastVersion', VERSION);
   const timer=setInterval(()=>provider.tick(),MINUTE);
   // Open the arena once after install so the fighters are visible straight away.
   if (!context.globalState.get('arenaShown')) {

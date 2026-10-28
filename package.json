@@ -2,7 +2,7 @@
   "name": "dbz-companions-local",
   "displayName": "DBZ Companions — Visual Fan Prototype",
   "description": "Unofficial local fan prototype: Goku and Vegeta live in a VS Code arena, level up into Super Saiyan forms while you code, hunt Dragon Balls and train in the Time Chamber.",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "publisher": "local-prototype",
   "private": true,
   "license": "UNLICENSED",
