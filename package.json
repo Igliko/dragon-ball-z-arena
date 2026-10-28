@@ -1,6 +1,6 @@
 {
-  "name": "dragon-ball-arena-vscode",
-  "displayName": "Dragon Ball Arena",
+  "name": "dragon-ball-z-arena",
+  "displayName": "Dragon Ball Z Arena",
   "description": "Unofficial Dragon Ball Z fan extension: Goku and Vegeta live in an arena under your code, power up into Super Saiyan forms while you type, hunt the Dragon Balls and train with you in the Time Chamber.",
   "version": "1.0.0",
   "publisher": "Iglikotsiai",
@@ -40,77 +40,77 @@
       {
         "command": "dbzCompanions.start",
         "title": "Start Coding Session",
-        "category": "Dragon Ball Arena"
+        "category": "Dragon Ball Z Arena"
       },
       {
         "command": "dbzCompanions.show",
         "title": "Show Companion",
-        "category": "Dragon Ball Arena"
+        "category": "Dragon Ball Z Arena"
       },
       {
         "command": "dbzCompanions.openBeside",
         "title": "Open Large Preview",
-        "category": "Dragon Ball Arena"
+        "category": "Dragon Ball Z Arena"
       },
       {
         "command": "dbzCompanions.throwSenzu",
         "title": "Throw Senzu Bean",
-        "category": "Dragon Ball Arena",
+        "category": "Dragon Ball Z Arena",
         "icon": "$(circle-filled)"
       },
       {
         "command": "dbzCompanions.kiBlast",
         "title": "Ki Blast!",
-        "category": "Dragon Ball Arena",
+        "category": "Dragon Ball Z Arena",
         "icon": "$(zap)"
       },
       {
         "command": "dbzCompanions.enterChamber",
         "title": "Enter the Hyperbolic Time Chamber (Focus Session)",
-        "category": "Dragon Ball Arena",
+        "category": "Dragon Ball Z Arena",
         "icon": "$(watch)"
       },
       {
         "command": "dbzCompanions.leaveChamber",
         "title": "Leave the Hyperbolic Time Chamber",
-        "category": "Dragon Ball Arena",
+        "category": "Dragon Ball Z Arena",
         "icon": "$(debug-stop)"
       },
       {
         "command": "dbzCompanions.changeBackground",
         "title": "Change Arena Background",
-        "category": "Dragon Ball Arena",
+        "category": "Dragon Ball Z Arena",
         "icon": "$(paintcan)"
       },
       {
         "command": "dbzCompanions.addFighter",
         "title": "Add Fighter",
-        "category": "Dragon Ball Arena",
+        "category": "Dragon Ball Z Arena",
         "icon": "$(person-add)"
       },
       {
         "command": "dbzCompanions.removeFighter",
         "title": "Remove Fighter",
-        "category": "Dragon Ball Arena"
+        "category": "Dragon Ball Z Arena"
       },
       {
         "command": "dbzCompanions.chooseFighter",
         "title": "Choose Fighter",
-        "category": "Dragon Ball Arena"
+        "category": "Dragon Ball Z Arena"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "dbzCompanions",
-          "title": "Dragon Ball Arena",
+          "title": "Dragon Ball Z Arena",
           "icon": "assets/activity.svg"
         }
       ],
       "panel": [
         {
           "id": "dbzArenaPanel",
-          "title": "Dragon Ball Arena",
+          "title": "Dragon Ball Z Arena",
           "icon": "assets/activity.svg"
         }
       ]
@@ -128,7 +128,7 @@
         {
           "type": "webview",
           "id": "dbzCompanions.arena",
-          "name": "Dragon Ball Arena",
+          "name": "Dragon Ball Z Arena",
           "when": "config.dbzCompanions.position == 'explorer'"
         }
       ],
@@ -136,13 +136,13 @@
         {
           "type": "webview",
           "id": "dbzCompanions.arenaPanel",
-          "name": "Dragon Ball Arena",
+          "name": "Dragon Ball Z Arena",
           "when": "config.dbzCompanions.position != 'explorer'"
         }
       ]
     },
     "configuration": {
-      "title": "Dragon Ball Arena",
+      "title": "Dragon Ball Z Arena",
       "properties": {
         "dbzCompanions.reactToSaves": {
           "type": "boolean",
@@ -165,7 +165,7 @@
             "Bottom panel, next to the terminal (under your code)",
             "Explorer sidebar"
           ],
-          "description": "Where the Dragon Ball Arena is shown."
+          "description": "Where the Dragon Ball Z Arena is shown."
         },
         "dbzCompanions.background": {
           "type": "string",

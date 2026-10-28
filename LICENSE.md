@@ -2,7 +2,7 @@
 
 Copyright (c) 2026 Iglikotsiai. All rights reserved.
 
-Dragon Ball Arena is a free, unofficial fan project. It is not affiliated with, endorsed, sponsored or approved by Bird Studio, Shueisha, Toei Animation or any other Dragon Ball rights holder.
+Dragon Ball Z Arena is a free, unofficial fan project. It is not affiliated with, endorsed, sponsored or approved by Bird Studio, Shueisha, Toei Animation or any other Dragon Ball rights holder.
 
 Dragon Ball, Dragon Ball Z, Goku, Vegeta, Shenron, Super Saiyan and all related names and characters belong to their respective owners. This extension uses them only as a non-commercial fan tribute and claims no ownership of them.
 
