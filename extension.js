@@ -132,7 +132,7 @@ class CompanionProvider {
     this.status.tooltip = [`${FIGHTER_NAMES[s.fighter]}: level ${level}, ${form.name}`,
       next ? `${next.name} at level ${next.level}` : 'Maximum power reached!',
       `Dragon Balls: ${ballCount(s.balls)} of 7` + (s.ballOut ? ' (one is waiting in the arena)' : ''),
-      'Click to open the DBZ Arena'].join('\n');
+      'Click to open the Dragon Ball Arena'].join('\n');
   }
   inChamber(now=Date.now()) { return this.state.chamberUntil > now; }
   // The countdown in the status bar and the timer that ends a Time Chamber session.
@@ -294,7 +294,7 @@ class CompanionProvider {
     if (pick) await this.setFighter(OTHER[pick.id]);
   }
   openBeside() {
-    const panel=vscode.window.createWebviewPanel('dbzCompanions.large','DBZ Companions — Preview',vscode.ViewColumn.Beside,{
+    const panel=vscode.window.createWebviewPanel('dbzCompanions.large','Dragon Ball Arena — Preview',vscode.ViewColumn.Beside,{
       enableScripts:true, retainContextWhenHidden:true, localResourceRoots:[vscode.Uri.file(path.join(this.context.extensionPath,'media'))]
     });
     panel.webview.html=this.html(panel.webview);
@@ -429,7 +429,7 @@ const scriptTags = a => a.scripts.map(src => `<script nonce="${a.nonce}" src="${
 function arenaDocument(a) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" /><link rel="stylesheet" href="${a.scenes}" />
-    <title>DBZ Arena</title></head>
+    <title>Dragon Ball Arena</title></head>
 <body class="arena-view" data-art='${a.art}' data-scene="${a.scene}">
   <div class="stage" id="stage" title="Click the ground to drop a senzu bean">
     ${SCENE_HTML}
@@ -442,7 +442,7 @@ function arenaDocument(a) {
 function htmlDocument(a) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="Content-Security-Policy" content="${a.csp}"/><link rel="stylesheet" href="${a.style}" /><link rel="stylesheet" href="${a.scenes}" />
-    <title>DBZ Companions</title></head>
+    <title>Dragon Ball Arena</title></head>
 <body data-art='${a.art}' data-scene="${a.scene}">
   <div class="shell">
     <nav class="nav" aria-label="Companion sections">
@@ -503,7 +503,7 @@ function htmlDocument(a) {
         <label class="toggle-row"><input id="training" type="checkbox" checked/><span><strong>Sparring</strong><small>Goku and Vegeta spar while you code</small></span></label>
         <label class="toggle-row"><input id="tiny" type="checkbox" checked/><span><strong>Compact fighters</strong><small>Smaller sprites on the stage and in the arena</small></span></label>
         <label class="toggle-row"><input id="particles" type="checkbox" checked/><span><strong>Aura effects</strong><small>Flickering auras and lightning</small></span></label>
-        <p class="hint">Save and error reactions, Dragon Balls, the scouter, the arena position and its background are in VS Code Settings under DBZ Companions.</p>
+        <p class="hint">Save and error reactions, Dragon Balls, the scouter, the arena position and its background are in VS Code Settings under Dragon Ball Arena.</p>
         <p class="hint">Unofficial fan project, not affiliated with Bird Studio, Shueisha or Toei Animation, who own Dragon Ball and its characters.</p>
       </section>
     </main>
@@ -515,7 +515,7 @@ function htmlDocument(a) {
 function activate(context) {
   // The local prototype registers the same commands and views, so wait until it is uninstalled.
   if (vscode.extensions.getExtension(OLD_PROTOTYPE)) {
-    vscode.window.showWarningMessage('The old local DBZ Companions prototype is still installed. Uninstall it, then reload the window, to start DBZ Companions.', 'Show Old Version')
+    vscode.window.showWarningMessage('The old local DBZ Companions prototype is still installed. Uninstall it, then reload the window, to start Dragon Ball Arena.', 'Show Old Version')
       .then(pick => { if (pick) vscode.commands.executeCommand('workbench.extensions.search', '@installed Visual Fan Prototype'); }, ()=>{});
     return;
   }
@@ -528,7 +528,7 @@ function activate(context) {
   provider.welcomeBall();
   // After an update, say so once: it also shows which version is running.
   if (context.globalState.get('arenaShown') && context.globalState.get('lastVersion') !== VERSION) {
-    vscode.window.showInformationMessage(`DBZ Companions updated to ${VERSION}: the arenas are redrawn, and the Tenkaichi Budokai and Kami's Lookout are new.`, 'Pick an Arena')
+    vscode.window.showInformationMessage(`Dragon Ball Arena updated to ${VERSION}: the arenas are redrawn, and the Tenkaichi Budokai and Kami's Lookout are new.`, 'Pick an Arena')
       .then(pick => { if (pick) Promise.resolve(vscode.commands.executeCommand('dbzCompanions.start')).then(()=>vscode.commands.executeCommand('dbzCompanions.changeBackground')); }, ()=>{});
   }
   context.globalState.update('lastVersion', VERSION);

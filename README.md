@@ -1,4 +1,4 @@
-# DBZ Companions
+# Dragon Ball Arena
 
 Goku and Vegeta live in an arena under your code, like VS Code Pets. They train, spar, nap and fire Kamehameha blasts on their own, level up into Super Saiyan forms while you code, hunt the Dragon Balls with you and keep you company in the Hyperbolic Time Chamber, a focus timer.
 
@@ -6,11 +6,11 @@ Goku and Vegeta live in an arena under your code, like VS Code Pets. They train,
 
 ## Getting started
 
-1. After you install it, the DBZ Arena opens in the bottom panel, next to the terminal. To open it again, run **DBZ Companions: Start Coding Session** from the Command Palette (`Ctrl+Shift+P`, or `Cmd+Shift+P` on macOS).
+1. After you install it, the Dragon Ball Arena opens in the bottom panel, next to the terminal. To open it again, run **Dragon Ball Arena: Start Coding Session** from the Command Palette (`Ctrl+Shift+P`, or `Cmd+Shift+P` on macOS).
 2. Pick your first fighter, Goku or Vegeta. Add the second one later with the **+** button on the arena's title bar (*Add Fighter*).
 3. Keep coding. Your fighter levels up as you type, and the first Dragon Ball is already waiting in the arena.
 
-The full view with stats and settings is the DBZ Companions icon in the Activity Bar.
+The full view with stats and settings is the Dragon Ball Arena icon in the Activity Bar.
 
 ## Features
 
@@ -52,7 +52,7 @@ The full view with stats and settings is the DBZ Companions icon in the Activity
 
 ## Fan project notice
 
-DBZ Companions is a free, unofficial fan project. It is not affiliated with, endorsed, sponsored or approved by Bird Studio, Shueisha, Toei Animation or any other Dragon Ball rights holder. Dragon Ball, Dragon Ball Z and all related names and characters belong to their respective owners. No official artwork or logos are used. If you represent a rights holder and want something changed or removed, please contact the publisher through this Marketplace page.
+Dragon Ball Arena is a free, unofficial fan project. It is not affiliated with, endorsed, sponsored or approved by Bird Studio, Shueisha, Toei Animation or any other Dragon Ball rights holder. Dragon Ball, Dragon Ball Z and all related names and characters belong to their respective owners. No official artwork or logos are used. If you represent a rights holder and want something changed or removed, please contact the publisher through this Marketplace page.
 
 ## Development
 
