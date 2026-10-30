@@ -2,7 +2,7 @@
   "name": "dragon-ball-z-arena",
   "displayName": "Dragon Ball Z Arena",
   "description": "Unofficial Dragon Ball Z fan extension: Goku and Vegeta live in an arena under your code, power up into Super Saiyan forms while you type, hunt the Dragon Balls and train with you in the Time Chamber.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "Iglikotsiai",
   "license": "SEE LICENSE IN LICENSE.md",
   "icon": "assets/icon.png",
@@ -104,14 +104,14 @@
         {
           "id": "dbzCompanions",
           "title": "Dragon Ball Z Arena",
-          "icon": "assets/activity.svg"
+          "icon": "assets/activity.png"
         }
       ],
       "panel": [
         {
           "id": "dbzArenaPanel",
           "title": "Dragon Ball Z Arena",
-          "icon": "assets/activity.svg"
+          "icon": "assets/activity.png"
         }
       ]
     },
@@ -121,7 +121,7 @@
           "type": "webview",
           "id": "dbzCompanions.view",
           "name": "Your Fighters",
-          "icon": "assets/activity.svg"
+          "icon": "assets/activity.png"
         }
       ],
       "explorer": [
@@ -258,7 +258,7 @@
     "extension.js",
     "media",
     "assets/icon.png",
-    "assets/activity.svg",
+    "assets/activity.png",
     "*.md"
   ]
 }

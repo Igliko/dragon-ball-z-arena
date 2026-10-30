@@ -1,9 +1,13 @@
 # Changelog
 
+## 1.0.3 (2026-10-30)
+
+- The Activity Bar icon is now the same Super Saiyan Goku as the Marketplace logo, in the single colour VS Code uses there.
+
 ## 1.0.2 (2026-10-30)
 
 - The arena now opens in the Explorer by default. Set `dbzCompanions.position` to `panel` to keep it next to the terminal.
-- The Activity Bar icon is now a four-star Dragon Ball, drawn as a plain shape so it shows up in every VS Code theme.
+- The Activity Bar icon is now a four-star Dragon Ball.
 
 ## 1.0.1 (2026-10-28)
 
