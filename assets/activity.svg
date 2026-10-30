@@ -1,10 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 128 128">
-  <mask id="m">
-    <circle cx="64" cy="65" r="39" fill="#fff"/>
-    <path d="M35 43L21 27L53 35L66 13L76 35L99 23L94 51" fill="#000" stroke="#000" stroke-width="19" stroke-linejoin="round"/>
-    <path d="M35 43L21 27L53 35L66 13L76 35L99 23L94 51" fill="#fff" stroke="#fff" stroke-width="7" stroke-linejoin="round"/>
-    <ellipse cx="49" cy="68" rx="6" ry="11" fill="#000"/><ellipse cx="79" cy="68" rx="6" ry="11" fill="#000"/>
-    <path d="M55 89Q64 98 74 89" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/>
-  </mask>
-  <rect width="128" height="128" fill="#c5c5c5" mask="url(#m)"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="#c5c5c5" fill-rule="evenodd" d="M1.5 12a10.5 10.5 0 1 0 21.0 0a10.5 10.5 0 1 0 -21.0 0ZM8.50 5.75L9.18 7.57L11.12 7.65L9.60 8.86L10.12 10.72L8.50 9.65L6.88 10.72L7.40 8.86L5.88 7.65L7.82 7.57ZM15.50 5.75L16.18 7.57L18.12 7.65L16.60 8.86L17.12 10.72L15.50 9.65L13.88 10.72L14.40 8.86L12.88 7.65L14.82 7.57ZM8.50 12.75L9.18 14.57L11.12 14.65L9.60 15.86L10.12 17.72L8.50 16.66L6.88 17.72L7.40 15.86L5.88 14.65L7.82 14.57ZM15.50 12.75L16.18 14.57L18.12 14.65L16.60 15.86L17.12 17.72L15.50 16.66L13.88 17.72L14.40 15.86L12.88 14.65L14.82 14.57Z"/></svg>

@@ -547,7 +547,7 @@ function activate(context) {
       if (['background','showHud','dragonBalls'].some(k=>e.affectsConfiguration('dbzCompanions.'+k))) provider.broadcast(provider.config());
     }),
     vscode.commands.registerCommand('dbzCompanions.start',()=>{
-      const position=vscode.workspace.getConfiguration('dbzCompanions').get('position','panel');
+      const position=vscode.workspace.getConfiguration('dbzCompanions').get('position','explorer');
       return vscode.commands.executeCommand(position==='explorer'?'dbzCompanions.arena.focus':'dbzCompanions.arenaPanel.focus');
     }),
     vscode.commands.registerCommand('dbzCompanions.changeBackground',()=>{

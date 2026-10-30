@@ -6,7 +6,7 @@ Goku and Vegeta live in an arena under your code, like VS Code Pets. They train,
 
 ## Getting started
 
-1. After you install it, the Dragon Ball Z Arena opens in the bottom panel, next to the terminal. To open it again, run **Dragon Ball Z Arena: Start Coding Session** from the Command Palette (`Ctrl+Shift+P`, or `Cmd+Shift+P` on macOS).
+1. After you install it, the Dragon Ball Z Arena opens in the Explorer sidebar. To open it again, run **Dragon Ball Z Arena: Start Coding Session** from the Command Palette (`Ctrl+Shift+P`, or `Cmd+Shift+P` on macOS).
 2. Pick your first fighter, Goku or Vegeta. Add the second one later with the **+** button on the arena's title bar (*Add Fighter*).
 3. Keep coding. Your fighter levels up as you type, and the first Dragon Ball is already waiting in the arena.
 
@@ -36,7 +36,7 @@ The full view with stats and settings is the Dragon Ball Z Arena icon in the Act
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `dbzCompanions.position` | `panel` | Arena in the bottom panel or the Explorer |
+| `dbzCompanions.position` | `explorer` | Arena in the Explorer or the bottom panel |
 | `dbzCompanions.background` | `wasteland` | Arena background |
 | `dbzCompanions.dragonBalls` | `true` | Find Dragon Balls while you code |
 | `dbzCompanions.showHud` | `true` | Show the scouter and the Dragon Ball tracker |
@@ -45,7 +45,7 @@ The full view with stats and settings is the Dragon Ball Z Arena icon in the Act
 
 ## Good to know
 
-- The arena lives in a VS Code view (the bottom panel or the Explorer); nothing is drawn over your code.
+- The arena lives in a VS Code view (the Explorer or the bottom panel); nothing is drawn over your code.
 - The fighters are illustrated cutouts animated with CSS, not frame-by-frame sprite sheets.
 - Works offline: no network access and no telemetry. Progress is saved in VS Code and shared by all your windows.
 - Respects your operating system's reduced motion setting.
